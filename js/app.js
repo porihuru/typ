@@ -1,6 +1,7 @@
 // app.js
-// 通常タイピング / EXP・ランク / 公式スプリント / SharePoint記録
-// ES5 only: IE11 / Edge IE mode compatible
+// playersリスト単独試験版
+// 通常タイピングは利用可能。SharePointへの書込はplayersだけに限定する。
+// ES5 only: IE11 / Edge 95 IE mode compatible
 (function () {
   "use strict";
 
@@ -19,7 +20,6 @@
   var state = {
     config: {},
     normalWords: [],
-    officialWords: [],
     romajiSettings: {},
     playerCode: "",
     clientId: "",
@@ -41,7 +41,7 @@
     queueIndex: 0,
     wordHadMiss: false,
     stats: null,
-    officialAuth: null
+    normalSeconds: 60
   };
 
   function $(id) {
@@ -51,7 +51,7 @@
   function text(id, value) {
     var el = $(id);
     if (el) {
-      el.innerText = String(value);
+      el.innerText = String(value === null || value === undefined ? "" : value);
     }
   }
 
@@ -79,27 +79,280 @@
     return isNaN(n) ? fallback : n;
   }
 
-  function boolValue(value) {
-    var s;
-    if (value === true) {
+  function setDiag(name, level, status, detail) {
+    var row = $("diag-" + name);
+    var statusEl = $("diag-" + name + "-status");
+    var detailEl = $("diag-" + name + "-detail");
+
+    if (row) {
+      row.className = "diag-row diag-" + level;
+    }
+    if (statusEl) {
+      statusEl.innerText = status || "";
+    }
+    if (detailEl) {
+      detailEl.innerText = detail || "";
+    }
+  }
+
+  function initDiagnostics() {
+    setDiag("config", "wait", "確認中", "config/config.txt");
+    setDiag("csv", "wait", "確認中", "通常問題CSV");
+    setDiag("sp", "wait", "未確認", "SharePoint REST API");
+    setDiag("playersread", "wait", "未確認", "players 読込");
+    setDiag("playerswrite", "wait", "未確認", "PLAYER保存ボタンで書込試験");
+    setDiag("others", "skip", "未接続", "normalrecords / officialrecords / tournament / accesscounter は今回試験しません");
+  }
+
+  function getSharePointError(req) {
+    var status = req && typeof req.status !== "undefined" ? req.status : 0;
+    var message = "";
+    var data;
+
+    if (req && req.responseText) {
+      try {
+        data = JSON.parse(req.responseText);
+        if (data && data.error && data.error.message) {
+          message = data.error.message.value || data.error.message;
+        }
+      } catch (e) {
+      }
+    }
+
+    if (!message) {
+      if (status === 0) {
+        message = "通信できません。WEB_ROOT、SharePoint上の配置場所、認証状態を確認してください。";
+      } else if (status === 400) {
+        message = "要求が不正です。playersの列名・内部名を確認してください。";
+      } else if (status === 401) {
+        message = "SharePointの認証が必要です。";
+      } else if (status === 403) {
+        message = "権限がありません。playersの閲覧・追加・編集権限を確認してください。";
+      } else if (status === 404) {
+        message = "見つかりません。WEB_ROOTまたはplayersリスト名を確認してください。";
+      } else if (status >= 500) {
+        message = "SharePointサーバー側でエラーが発生しました。";
+      } else {
+        message = req && req.statusText ? req.statusText : "SharePoint通信エラー";
+      }
+    }
+
+    if (message.length > 180) {
+      message = message.substring(0, 180) + "...";
+    }
+
+    return "HTTP " + status + " / " + message;
+  }
+
+  function resetPlayerState() {
+    state.player = {
+      itemId: null,
+      exp: 0,
+      rank: 1,
+      plays: 0,
+      bestScore: 0
+    };
+    updateHomePlayer();
+  }
+
+  function setPlayerInputs(code) {
+    var parts;
+    if (!code) {
+      return;
+    }
+    parts = code.split("-");
+    if (parts.length === 2) {
+      $("playerNumber").value = parts[0];
+      $("playerNick").value = parts[1];
+    }
+  }
+
+  function updateExpBar(barId, exp) {
+    var current = GameRules.getRankByExp(exp);
+    var next = GameRules.getNextRank(exp);
+    var percent;
+    var bar = $(barId);
+
+    if (!bar) {
+      return;
+    }
+
+    if (!next) {
+      percent = 100;
+    } else {
+      percent = ((exp - current.exp) / (next.exp - current.exp)) * 100;
+      if (percent < 0) { percent = 0; }
+      if (percent > 100) { percent = 100; }
+    }
+
+    bar.style.width = percent.toFixed(1) + "%";
+  }
+
+  function updateHomePlayer() {
+    var rank = GameRules.getRankByExp(state.player.exp);
+    state.player.rank = rank.rank;
+    text("homeRank", rank.name);
+    text("homeExp", state.player.exp);
+    text("homeBest", "BEST SCORE " + state.player.bestScore);
+    updateExpBar("homeExpBar", state.player.exp);
+    text("playerCodeDisplay", state.playerCode || "--- --");
+  }
+
+  function applyPlayerItem(item) {
+    if (!item) {
+      resetPlayerState();
+      return;
+    }
+
+    state.player.itemId = item.Id;
+    state.player.exp = numberValue(item.EXP, 0);
+    state.player.plays = numberValue(item.Plays, 0);
+    state.player.bestScore = numberValue(item.BestScore, 0);
+    state.player.rank = GameRules.getRankByExp(state.player.exp).rank;
+    updateHomePlayer();
+  }
+
+  function findCurrentPlayer(items) {
+    var i;
+    for (i = 0; i < items.length; i++) {
+      if (String(items[i].ClientId || "") === state.clientId) {
+        return items[i];
+      }
+    }
+    return null;
+  }
+
+  function testPlayersRead(callback) {
+    var listName = state.config.PLAYER_LIST;
+
+    if (!listName) {
+      setDiag("playersread", "ng", "NG", "configにPLAYER_LISTがありません。");
+      if (callback) { callback(false, []); }
+      return;
+    }
+
+    setDiag("playersread", "wait", "確認中", listName + " を読み込んでいます...");
+    setDiag("sp", "wait", "確認中", SP.api || "SharePoint REST API");
+
+    SP.load(
+      listName,
+      ["Id", "Title", "ClientId", "EXP", "Rank", "Plays", "BestScore"],
+      function (items) {
+        var current = findCurrentPlayer(items);
+        var detail = listName + " / " + items.length + "件読込成功";
+
+        setDiag("sp", "ok", "OK", SP.api);
+        if (state.playerCode && !current) {
+          detail += " / この端末のplayerは未登録";
+        }
+        setDiag("playersread", "ok", "OK", detail);
+
+        if (current) {
+          applyPlayerItem(current);
+        } else if (state.playerCode) {
+          resetPlayerState();
+        }
+
+        setStatus("players 読込成功");
+        if (callback) { callback(true, items); }
+      },
+      function (req) {
+        var detail = getSharePointError(req);
+        setDiag("sp", "ng", "NG", detail + " / API: " + (SP.api || "未設定"));
+        setDiag("playersread", "ng", "NG", detail);
+        setStatus("playersに接続できません。接続状況の詳細を確認してください。");
+        if (callback) { callback(false, []); }
+      }
+    );
+  }
+
+  function playerProfile() {
+    return {
+      Title: state.playerCode,
+      ClientId: state.clientId,
+      EXP: state.player.exp,
+      Rank: state.player.rank,
+      Plays: state.player.plays,
+      BestScore: state.player.bestScore
+    };
+  }
+
+  function writePlayerProfile(done) {
+    var listName = state.config.PLAYER_LIST;
+    var profile = playerProfile();
+
+    if (!state.playerCode) {
+      if (done) { done(false); }
+      return;
+    }
+
+    setDiag("playerswrite", "wait", "書込中", state.player.itemId ? "既存playerを更新中..." : "playerを追加中...");
+
+    function writeError(req) {
+      var detail = getSharePointError(req);
+      setDiag("playerswrite", "ng", "NG", detail);
+      setStatus("playersへの書込に失敗しました。");
+      if (done) { done(false); }
+    }
+
+    if (state.player.itemId) {
+      SP.update(listName, state.player.itemId, profile, function () {
+        setDiag("playerswrite", "ok", "OK", "更新成功 / ID " + state.player.itemId + " / " + state.playerCode);
+        setStatus("playersへの更新に成功しました。");
+        if (done) { done(true); }
+      }, writeError);
+      return;
+    }
+
+    SP.add(listName, profile, function (result) {
+      try {
+        if (result && result.d && result.d.Id) {
+          state.player.itemId = result.d.Id;
+        }
+      } catch (e) {
+      }
+      setDiag("playerswrite", "ok", "OK", "追加成功" + (state.player.itemId ? " / ID " + state.player.itemId : "") + " / " + state.playerCode);
+      setStatus("playersへの追加に成功しました。");
+      if (done) { done(true); }
+    }, writeError);
+  }
+
+  function savePlayerFromInputs(showAlert, writeSharePoint) {
+    var code = Settings.makePlayerCode($("playerNumber").value, $("playerNick").value);
+
+    if (!code) {
+      if (showAlert) {
+        window.alert("プレイヤーコードは3桁の数字と英字2文字で入力してください。例：123-AB");
+      }
+      return false;
+    }
+
+    state.playerCode = code;
+    Settings.savePlayerCode(code);
+    text("playerCodeDisplay", code);
+    setPlayerInputs(code);
+
+    if (writeSharePoint) {
+      testPlayersRead(function (ok) {
+        if (!ok) {
+          return;
+        }
+        writePlayerProfile(function (writeOk) {
+          if (writeOk) {
+            testPlayersRead();
+          }
+        });
+      });
+    }
+
+    return true;
+  }
+
+  function ensurePlayer() {
+    if (state.playerCode && /^\d{3}-[A-Z]{2}$/.test(state.playerCode)) {
       return true;
     }
-    s = String(value === null || value === undefined ? "" : value).toLowerCase();
-    return s === "true" || s === "1" || s === "yes";
-  }
-
-  function isoNow() {
-    var d = new Date();
-    if (d.toISOString) {
-      return d.toISOString();
-    }
-    function p(n) { return n < 10 ? "0" + n : String(n); }
-    return d.getUTCFullYear() + "-" + p(d.getUTCMonth() + 1) + "-" + p(d.getUTCDate()) +
-      "T" + p(d.getUTCHours()) + ":" + p(d.getUTCMinutes()) + ":" + p(d.getUTCSeconds()) + "Z";
-  }
-
-  function formatSeconds(ms) {
-    return (ms / 1000).toFixed(3);
+    return savePlayerFromInputs(true, false);
   }
 
   function stopTimer() {
@@ -112,7 +365,6 @@
   function cancelCountdown() {
     state.countdownToken++;
     text("normalCountdown", "");
-    text("officialCountdown", "");
   }
 
   function runCountdown(elementId, callback) {
@@ -126,14 +378,12 @@
       if (token !== state.countdownToken) {
         return;
       }
-
       value--;
       if (value > 0) {
         text(elementId, value);
         window.setTimeout(tick, 800);
         return;
       }
-
       text(elementId, "START!");
       window.setTimeout(function () {
         if (token !== state.countdownToken) {
@@ -154,165 +404,6 @@
       }
     } catch (e) {
     }
-  }
-
-  function setPlayerInputs(code) {
-    var parts;
-    if (!code) {
-      return;
-    }
-    parts = code.split("-");
-    if (parts.length === 2) {
-      $("playerNumber").value = parts[0];
-      $("playerNick").value = parts[1];
-    }
-  }
-
-  function savePlayerFromInputs(showAlert) {
-    var code = Settings.makePlayerCode($("playerNumber").value, $("playerNick").value);
-
-    if (!code) {
-      if (showAlert) {
-        window.alert("プレイヤーコードは3桁の数字と英字2文字で入力してください。例：123-AB");
-      }
-      return false;
-    }
-
-    state.playerCode = code;
-    Settings.savePlayerCode(code);
-    text("playerCodeDisplay", code);
-    text("officialPlayer", code);
-    text("officialReadyPlayer", code);
-    setPlayerInputs(code);
-    loadPlayerState();
-    return true;
-  }
-
-  function ensurePlayer() {
-    if (state.playerCode && /^\d{3}-[A-Z]{2}$/.test(state.playerCode)) {
-      return true;
-    }
-    return savePlayerFromInputs(true);
-  }
-
-  function resetPlayerState() {
-    state.player = {
-      itemId: null,
-      exp: 0,
-      rank: 1,
-      plays: 0,
-      bestScore: 0
-    };
-    updateHomePlayer();
-  }
-
-  function updateExpBar(barId, exp) {
-    var current = GameRules.getRankByExp(exp);
-    var next = GameRules.getNextRank(exp);
-    var percent;
-
-    if (!next) {
-      percent = 100;
-    } else {
-      percent = ((exp - current.exp) / (next.exp - current.exp)) * 100;
-      if (percent < 0) { percent = 0; }
-      if (percent > 100) { percent = 100; }
-    }
-
-    $(barId).style.width = percent.toFixed(1) + "%";
-  }
-
-  function updateHomePlayer() {
-    var rank = GameRules.getRankByExp(state.player.exp);
-    state.player.rank = rank.rank;
-    text("homeRank", rank.name);
-    text("homeExp", state.player.exp);
-    text("homeBest", "BEST SCORE " + state.player.bestScore);
-    updateExpBar("homeExpBar", state.player.exp);
-    text("playerCodeDisplay", state.playerCode || "--- --");
-  }
-
-  function loadPlayerState() {
-    var listName;
-
-    if (!state.playerCode || !state.config.PLAYER_LIST) {
-      resetPlayerState();
-      return;
-    }
-
-    listName = state.config.PLAYER_LIST;
-
-    SP.load(
-      listName,
-      ["Id", "Title", "ClientId", "EXP", "Rank", "Plays", "BestScore"],
-      function (items) {
-        var i;
-        var item = null;
-        for (i = 0; i < items.length; i++) {
-          if (String(items[i].ClientId || "") === state.clientId) {
-            item = items[i];
-            break;
-          }
-        }
-
-        if (!item) {
-          resetPlayerState();
-          return;
-        }
-
-        state.player.itemId = item.Id;
-        state.player.exp = numberValue(item.EXP, 0);
-        state.player.plays = numberValue(item.Plays, 0);
-        state.player.bestScore = numberValue(item.BestScore, 0);
-        state.player.rank = GameRules.getRankByExp(state.player.exp).rank;
-        updateHomePlayer();
-      },
-      function () {
-        // SharePointが使えなくてもゲームは止めない。
-        updateHomePlayer();
-      }
-    );
-  }
-
-  function updateAccessCounter() {
-    var listName = state.config.COUNTER_LIST;
-
-    if (!listName) {
-      return;
-    }
-
-    SP.load(listName, ["Id", "Title", "Count"], function (items) {
-      var i;
-      var total = null;
-      var next;
-
-      for (i = 0; i < items.length; i++) {
-        if (String(items[i].Title || "").toLowerCase() === "total") {
-          total = items[i];
-          break;
-        }
-      }
-
-      if (total) {
-        next = numberValue(total.Count, 0) + 1;
-        text("accessCount", next);
-        SP.update(listName, total.Id, { Count: next }, function () {
-          setStatus("SharePoint接続済み");
-        }, function () {
-          setStatus("ゲーム利用可能 / アクセスカウンター更新失敗");
-        });
-      } else {
-        text("accessCount", 1);
-        SP.add(listName, { Title: "Total", Count: 1 }, function () {
-          setStatus("SharePoint接続済み");
-        }, function () {
-          setStatus("ゲーム利用可能 / アクセスカウンター作成失敗");
-        });
-      }
-    }, function () {
-      text("accessCount", "---");
-      setStatus("SharePoint未接続またはリスト未作成 / 通常ゲームは利用できます");
-    });
   }
 
   function renderNormalWord() {
@@ -355,7 +446,7 @@
       return;
     }
     if (!state.normalWords.length) {
-      window.alert("通常タイピングの問題がありません。");
+      window.alert("通常タイピングの問題CSVを読み込めていません。接続状況を確認してください。");
       return;
     }
 
@@ -388,7 +479,7 @@
     updateNormalStats();
     nextNormalWord();
     showView("viewNormalGame");
-    setStatus("通常タイピング / " + rank.name + " / LEVEL " + rank.maxLevel);
+    setStatus("通常タイピング / 記録先はplayersのみ");
 
     runCountdown("normalCountdown", function () {
       state.startMs = new Date().getTime();
@@ -452,7 +543,6 @@
     var gained;
     var oldRank;
     var newRank;
-    var oldExp;
 
     if (state.mode !== "normal") {
       return;
@@ -464,8 +554,7 @@
 
     accuracy = GameRules.calculateAccuracy(state.stats.correctKeys, state.stats.missKeys);
     gained = GameRules.calculateExp(state.stats);
-    oldExp = state.player.exp;
-    oldRank = GameRules.getRankByExp(oldExp);
+    oldRank = GameRules.getRankByExp(state.player.exp);
 
     state.player.exp += gained;
     state.player.plays++;
@@ -492,76 +581,13 @@
       $("rankUpBanner").className = "rank-up hidden";
     }
 
-    text("resultSaveStatus", "SharePointへ記録を保存中...");
+    text("resultSaveStatus", "playersへ成長情報を保存中...");
     showView("viewNormalResult");
     updateHomePlayer();
-    saveNormalResult(accuracy, gained);
-  }
 
-  function saveNormalResult(accuracy, gained) {
-    var pending = 2;
-    var failed = false;
-    var record;
-    var profile;
-
-    function done(ok) {
-      if (!ok) {
-        failed = true;
-      }
-      pending--;
-      if (pending <= 0) {
-        text("resultSaveStatus", failed ? "一部のSharePoint記録を保存できませんでした。" : "SharePointへ保存しました。");
-      }
-    }
-
-    record = {
-      Title: state.playerCode,
-      ClientId: state.clientId,
-      Score: state.stats.score,
-      EXP: gained,
-      Accuracy: accuracy,
-      CorrectKeys: state.stats.correctKeys,
-      MissKeys: state.stats.missKeys,
-      Completed: state.stats.completed,
-      MaxCombo: state.stats.maxCombo,
-      Mode: "60SEC",
-      PlayDate: isoNow()
-    };
-
-    profile = {
-      Title: state.playerCode,
-      ClientId: state.clientId,
-      EXP: state.player.exp,
-      Rank: state.player.rank,
-      Plays: state.player.plays,
-      BestScore: state.player.bestScore
-    };
-
-    SP.add(state.config.NORMAL_RECORD_LIST, record, function () {
-      done(true);
-    }, function () {
-      done(false);
+    writePlayerProfile(function (ok) {
+      text("resultSaveStatus", ok ? "playersへ保存しました。通常記録リストにはまだ保存していません。" : "playersへの保存に失敗しました。接続状況を確認してください。");
     });
-
-    if (state.player.itemId) {
-      SP.update(state.config.PLAYER_LIST, state.player.itemId, profile, function () {
-        done(true);
-      }, function () {
-        done(false);
-      });
-    } else {
-      SP.add(state.config.PLAYER_LIST, profile, function (result) {
-        try {
-          if (result && result.d && result.d.Id) {
-            state.player.itemId = result.d.Id;
-          }
-        } catch (e) {
-        }
-        done(true);
-      }, function () {
-        done(false);
-      });
-    }
   }
 
   function abortNormal() {
@@ -570,312 +596,6 @@
     stopTimer();
     cancelCountdown();
     showHome();
-  }
-
-  function openOfficialLogin() {
-    if (!ensurePlayer()) {
-      return;
-    }
-    state.officialAuth = null;
-    text("officialPlayer", state.playerCode);
-    $("officialPassword").value = "";
-    text("officialLoginMessage", "");
-    showView("viewOfficialLogin");
-    setStatus("公式大会：参加者コードと大会パスワードを確認します");
-  }
-
-  function authenticateOfficial() {
-    var password = $("officialPassword").value;
-    var tournamentId = state.config.TOURNAMENT_ID || "OFFICIAL-01";
-    var expectedVersion = numberValue(state.config.OFFICIAL_WORDS_VERSION, 1);
-
-    if (!password) {
-      text("officialLoginMessage", "大会パスワードを入力してください。");
-      return;
-    }
-
-    text("officialLoginMessage", "SharePointで参加資格を確認中...");
-
-    SP.load(
-      state.config.TOURNAMENT_LIST,
-      ["Id", "Title", "RecordType", "TournamentId", "CourseVersion", "EntryPassword", "Active", "PlayerCode"],
-      function (items) {
-        var configRow = null;
-        var participants = [];
-        var i;
-        var type;
-
-        for (i = 0; i < items.length; i++) {
-          if (String(items[i].TournamentId || "") !== tournamentId) {
-            continue;
-          }
-
-          type = String(items[i].RecordType || "").toUpperCase();
-          if (type === "CONFIG" && boolValue(items[i].Active)) {
-            configRow = items[i];
-          } else if (type === "PARTICIPANT" && boolValue(items[i].Active) && String(items[i].PlayerCode || "").toUpperCase() === state.playerCode) {
-            participants.push(items[i]);
-          }
-        }
-
-        if (!configRow) {
-          text("officialLoginMessage", "現在有効な大会がありません。");
-          return;
-        }
-
-        if (participants.length === 0) {
-          text("officialLoginMessage", "このプレイヤーコードは大会参加者に登録されていません。");
-          return;
-        }
-
-        if (participants.length > 1) {
-          text("officialLoginMessage", "参加者コードが重複登録されています。管理者に確認してください。");
-          return;
-        }
-
-        if (String(configRow.EntryPassword || "") !== String(password)) {
-          text("officialLoginMessage", "大会パスワードが違います。");
-          return;
-        }
-
-        if (numberValue(configRow.CourseVersion, 0) !== expectedVersion) {
-          text("officialLoginMessage", "公式問題のバージョンが一致しません。管理者に確認してください。");
-          return;
-        }
-
-        state.officialAuth = {
-          tournamentId: tournamentId,
-          version: expectedVersion,
-          title: configRow.Title || tournamentId
-        };
-
-        text("officialTournamentTitle", state.officialAuth.title);
-        text("officialReadyPlayer", state.playerCode);
-        text("officialWordCount", state.officialWords.length);
-        text("officialVersion", expectedVersion);
-        showView("viewOfficialReady");
-        setStatus("公式大会参加認証 OK");
-      },
-      function () {
-        text("officialLoginMessage", "SharePointの大会設定を読み込めません。公式大会には入れません。");
-      }
-    );
-  }
-
-  function renderOfficialWord() {
-    var word = state.engine.word;
-    if (!word) {
-      return;
-    }
-    text("officialKanji", word.kanji);
-    text("officialKana", word.kana);
-    text("officialGuide", state.engine.getGuide());
-    text("officialTyped", state.engine.typed);
-    text("officialProgress", (state.queueIndex + 1) + " / " + state.queue.length);
-  }
-
-  function startOfficial() {
-    if (!state.officialAuth) {
-      openOfficialLogin();
-      return;
-    }
-    if (!state.officialWords.length) {
-      window.alert("公式タイピングの問題がありません。");
-      return;
-    }
-
-    blurInput();
-    stopTimer();
-    cancelCountdown();
-
-    state.romajiSettings = Settings.cloneSettings(Settings.loadRomaji());
-    state.engine = new TypingEngine(state.romajiSettings);
-    state.queue = GameRules.shuffle(state.officialWords);
-    state.queueIndex = 0;
-    state.stats = {
-      correctKeys: 0,
-      missKeys: 0,
-      completed: 0
-    };
-    state.mode = "official";
-    state.active = false;
-
-    state.engine.setWord(state.queue[0]);
-    text("officialTime", "0.000");
-    text("officialMiss", "0");
-    renderOfficialWord();
-    showView("viewOfficialGame");
-    setStatus("公式スプリント / 全" + state.queue.length + "問");
-
-    runCountdown("officialCountdown", function () {
-      state.startMs = new Date().getTime();
-      state.active = true;
-      state.timer = window.setInterval(updateOfficialClock, 31);
-    });
-  }
-
-  function updateOfficialClock() {
-    var elapsed;
-    if (!state.active || state.mode !== "official") {
-      return;
-    }
-    elapsed = new Date().getTime() - state.startMs;
-    text("officialTime", formatSeconds(elapsed));
-  }
-
-  function handleOfficialChar(ch) {
-    var result = state.engine.handleChar(ch);
-    var finishMs;
-
-    if (result.accepted) {
-      state.stats.correctKeys++;
-      text("officialTyped", result.typed);
-
-      if (result.complete) {
-        state.stats.completed++;
-        state.queueIndex++;
-
-        if (state.queueIndex >= state.queue.length) {
-          finishMs = new Date().getTime();
-          finishOfficial(finishMs - state.startMs);
-          return;
-        }
-
-        state.engine.setWord(state.queue[state.queueIndex]);
-        renderOfficialWord();
-      }
-    } else if (result.miss) {
-      state.stats.missKeys++;
-      text("officialMiss", state.stats.missKeys);
-    }
-  }
-
-  function finishOfficial(timeMs) {
-    var accuracy;
-
-    state.active = false;
-    stopTimer();
-    cancelCountdown();
-
-    accuracy = GameRules.calculateAccuracy(state.stats.correctKeys, state.stats.missKeys);
-
-    text("officialResultTime", formatSeconds(timeMs) + " 秒");
-    text("officialResultWords", state.stats.completed);
-    text("officialResultCorrect", state.stats.correctKeys);
-    text("officialResultMiss", state.stats.missKeys);
-    text("officialResultAccuracy", accuracy.toFixed(1) + "%");
-    text("officialBest", "");
-    text("officialRank", "");
-    text("officialSaveStatus", "公式記録をSharePointへ保存中...");
-    showView("viewOfficialResult");
-
-    saveOfficialResult(timeMs, accuracy);
-  }
-
-  function saveOfficialResult(timeMs, accuracy) {
-    var record = {
-      Title: state.playerCode,
-      ClientId: state.clientId,
-      TournamentId: state.officialAuth.tournamentId,
-      CourseVersion: state.officialAuth.version,
-      TimeMs: timeMs,
-      Miss: state.stats.missKeys,
-      CorrectKeys: state.stats.correctKeys,
-      Accuracy: accuracy,
-      PlayDate: isoNow()
-    };
-
-    SP.add(state.config.OFFICIAL_RECORD_LIST, record, function () {
-      text("officialSaveStatus", "公式記録を保存しました。");
-      loadOfficialRanking();
-    }, function () {
-      text("officialSaveStatus", "公式記録を保存できませんでした。この結果は公式記録になりません。");
-    });
-  }
-
-  function loadOfficialRanking() {
-    SP.load(
-      state.config.OFFICIAL_RECORD_LIST,
-      ["Id", "Title", "TournamentId", "CourseVersion", "TimeMs", "Miss", "PlayDate"],
-      function (items) {
-        var bestByPlayer = {};
-        var i;
-        var item;
-        var code;
-        var old;
-        var list = [];
-        var myBest = null;
-        var myRank = 0;
-
-        for (i = 0; i < items.length; i++) {
-          item = items[i];
-          if (String(item.TournamentId || "") !== state.officialAuth.tournamentId) {
-            continue;
-          }
-          if (numberValue(item.CourseVersion, 0) !== state.officialAuth.version) {
-            continue;
-          }
-
-          code = String(item.Title || "").toUpperCase();
-          if (!code) {
-            continue;
-          }
-
-          item.TimeMs = numberValue(item.TimeMs, 999999999);
-          item.Miss = numberValue(item.Miss, 999999);
-          old = bestByPlayer[code];
-
-          if (!old || item.TimeMs < old.TimeMs || (item.TimeMs === old.TimeMs && item.Miss < old.Miss)) {
-            bestByPlayer[code] = item;
-          }
-        }
-
-        for (code in bestByPlayer) {
-          if (bestByPlayer.hasOwnProperty(code)) {
-            list.push({ code: code, time: bestByPlayer[code].TimeMs, miss: bestByPlayer[code].Miss });
-          }
-        }
-
-        list.sort(function (a, b) {
-          if (a.time !== b.time) {
-            return a.time - b.time;
-          }
-          if (a.miss !== b.miss) {
-            return a.miss - b.miss;
-          }
-          return a.code < b.code ? -1 : (a.code > b.code ? 1 : 0);
-        });
-
-        for (i = 0; i < list.length; i++) {
-          if (list[i].code === state.playerCode) {
-            myBest = list[i];
-            myRank = i + 1;
-            break;
-          }
-        }
-
-        if (myBest) {
-          text("officialBest", "自己ベスト " + formatSeconds(myBest.time) + " 秒");
-          text("officialRank", "現在 " + myRank + " 位 / " + list.length + "人");
-        }
-      },
-      function () {
-        // 記録保存後のランキング取得失敗は競技結果自体には影響させない。
-      }
-    );
-  }
-
-  function abortOfficial() {
-    state.active = false;
-    state.mode = "";
-    stopTimer();
-    cancelCountdown();
-    if (state.officialAuth) {
-      showView("viewOfficialReady");
-      setStatus("公式大会：中止した競技は記録されません");
-    } else {
-      showHome();
-    }
   }
 
   function openSettings() {
@@ -905,7 +625,7 @@
     cancelCountdown();
     updateHomePlayer();
     showView("viewHome");
-    setStatus("準備完了");
+    setStatus("players単独試験モード");
   }
 
   function handleKeyDown(e) {
@@ -929,34 +649,21 @@
 
     if (state.mode === "normal") {
       handleNormalChar(ch);
-    } else if (state.mode === "official") {
-      handleOfficialChar(ch);
     }
   }
 
   function bindEvents() {
-    $("btnSavePlayer").onclick = function () { savePlayerFromInputs(true); };
+    $("btnSavePlayer").onclick = function () { savePlayerFromInputs(true, true); };
+    $("btnRetryPlayers").onclick = function () { testPlayersRead(); };
     $("btnNormal").onclick = startNormal;
-    $("btnOfficial").onclick = openOfficialLogin;
+    $("btnOfficial").onclick = function () {
+      window.alert("現在はplayersだけの接続試験中です。tournament / officialrecords はまだ接続しません。");
+    };
     $("btnSettings").onclick = openSettings;
 
     $("btnAbortNormal").onclick = abortNormal;
     $("btnNormalAgain").onclick = startNormal;
     $("btnNormalHome").onclick = showHome;
-
-    $("btnOfficialEnter").onclick = authenticateOfficial;
-    $("btnOfficialBack").onclick = showHome;
-    $("btnOfficialStart").onclick = startOfficial;
-    $("btnOfficialReadyBack").onclick = showHome;
-    $("btnAbortOfficial").onclick = abortOfficial;
-    $("btnOfficialAgain").onclick = function () {
-      if (state.officialAuth) {
-        showView("viewOfficialReady");
-      } else {
-        openOfficialLogin();
-      }
-    };
-    $("btnOfficialHome").onclick = showHome;
 
     $("btnSaveSettings").onclick = saveSettings;
     $("btnResetSettings").onclick = resetSettings;
@@ -973,40 +680,27 @@
     if (state.playerCode) {
       setPlayerInputs(state.playerCode);
       text("playerCodeDisplay", state.playerCode);
-      text("officialPlayer", state.playerCode);
-      text("officialReadyPlayer", state.playerCode);
     }
 
+    text("testModeDisplay", "players");
     showView("viewHome");
-    setStatus("問題データ読込完了 / SharePoint接続確認中...");
     updateHomePlayer();
-    updateAccessCounter();
-
-    if (state.playerCode) {
-      loadPlayerState();
-    }
-  }
-
-  function loadOfficialCSV() {
-    var url = state.config.OFFICIAL_CSV || "official.csv";
-    FileData.loadTypingCSV(url, function (words) {
-      state.officialWords = words;
-      finishDataLoad();
-    }, function () {
-      state.officialWords = [];
-      finishDataLoad();
-      setStatus("通常ゲーム利用可能 / official.csvを読み込めないため公式大会は利用できません");
-    });
+    setStatus("players接続確認中...");
+    testPlayersRead();
   }
 
   function loadNormalCSV() {
-    var url = state.config.TYPING_CSV || "typing.csv";
+    var url = state.config.TYPING_CSV || "csv/typing.csv";
+
+    setDiag("csv", "wait", "確認中", url);
     FileData.loadTypingCSV(url, function (words) {
       state.normalWords = words;
-      loadOfficialCSV();
-    }, function () {
-      setStatus("typing.csvを読み込めません。配置場所とファイル名を確認してください。");
-      text("viewLoading", "typing.csvを読み込めません。");
+      setDiag("csv", "ok", "OK", url + " / " + words.length + "件");
+      finishDataLoad();
+    }, function (req) {
+      state.normalWords = [];
+      setDiag("csv", "ng", "NG", "読込失敗 / " + url + " / HTTP " + (req && typeof req.status !== "undefined" ? req.status : 0));
+      finishDataLoad();
     });
   }
 
@@ -1014,18 +708,29 @@
     state.config = config || {};
     Settings.configure(state.config.COOKIE_DAYS || 365);
     SP.init(state.config.WEB_ROOT || "AUTO");
+
+    setDiag("config", "ok", "OK", "config/config.txt / PLAYER_LIST=" + (state.config.PLAYER_LIST || "未設定"));
+    setDiag("sp", "wait", "未確認", "API: " + (SP.api || "未設定"));
+    setDiag("others", "skip", "未接続", "playersのみ試験。その他4リストへのREST通信は停止中");
+
     loadNormalCSV();
   }
 
   function init() {
     bindEvents();
+    initDiagnostics();
     showView("viewLoading");
-    setStatus("config.txtを読み込んでいます...");
+    setStatus("config/config.txtを読み込んでいます...");
 
-    FileData.loadConfig("config.txt", function (config) {
+    FileData.loadConfig("config/config.txt", function (config) {
       initWithConfig(config);
-    }, function () {
-      setStatus("config.txtを読み込めません。SharePoint上の配置を確認してください。");
+    }, function (req) {
+      setDiag("config", "ng", "NG", "config/config.txt 読込失敗 / HTTP " + (req && typeof req.status !== "undefined" ? req.status : 0));
+      setDiag("csv", "skip", "未実施", "configを読み込めないため未実施");
+      setDiag("sp", "skip", "未実施", "configを読み込めないためWEB_ROOT未確定");
+      setDiag("playersread", "skip", "未実施", "configを読み込めないため未実施");
+      showView("viewHome");
+      setStatus("config/config.txtを読み込めません。接続状況を確認してください。");
     });
   }
 
