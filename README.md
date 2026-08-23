@@ -1,6 +1,6 @@
 # typ
 
-IE11互換モード（Edge IE modeを含む）で動作する、SharePoint連携型タイピングゲームです。
+IE11互換モード（Edge IE modeを含む）で動作するSharePoint連携型タイピングゲームです。
 
 ## ファイル
 
@@ -11,10 +11,119 @@ IE11互換モード（Edge IE modeを含む）で動作する、SharePoint連携
 - `romaji.js` : かな→ローマ字候補、複数入力方式
 - `settings.js` : Cookie設定、プレイヤーコード
 - `csv.js` : `config.txt` とCSVの読込
-- `sp.js` : SharePoint REST API共通処理
+- `sp.js` : SharePoint REST API共通処理・小文字列名変換
 - `config.txt` : SharePoint接続先・リスト名など
 - `typing.csv` : 通常ゲーム問題
 - `official.csv` : 公式スプリント固定問題
+
+## SharePoint命名規則
+
+このアプリで作成するSharePointの **リスト名とカスタム列の内部名は、すべて英小文字** に統一します。
+
+SharePoint標準の `ID` / `Id` と `Title` はシステム列なので例外です。利用者が作成する業務用の列では `Title` を使わず、代わりに `key` を使用します。
+
+`sp.js` がアプリ内部の従来フィールド名を小文字の内部名へ自動変換します。また、追加・更新時は `key` とSharePoint標準 `Title` の両方へ同じ値を書き込むため、標準 `Title` が必須のリストでも動作できます。
+
+## config.txt
+
+```text
+WEB_ROOT=AUTO
+TYPING_CSV=typing.csv
+OFFICIAL_CSV=official.csv
+PLAYER_LIST=players
+NORMAL_RECORD_LIST=normalrecords
+OFFICIAL_RECORD_LIST=officialrecords
+TOURNAMENT_LIST=tournament
+COUNTER_LIST=accesscounter
+NORMAL_SECONDS=60
+COOKIE_DAYS=365
+TOURNAMENT_ID=official01
+OFFICIAL_WORDS_VERSION=1
+```
+
+`WEB_ROOT` はSharePoint Webのパスを明示することもできます。
+
+```text
+WEB_ROOT=/sites/typing
+```
+
+`AUTO` の場合は現在URLから自動判定します。
+
+## SharePointリスト設計
+
+### 1. players
+
+プレイヤーの成長情報を保持します。
+
+| 内部名 | 種類 | 用途 |
+|---|---|---|
+| key | 1行テキスト | PlayerCode（例 `123-AB`） |
+| clientid | 1行テキスト | Cookieで保持する端末識別子 |
+| exp | 数値 | 累計EXP |
+| rank | 数値 | 現在ランク |
+| plays | 数値 | 通常ゲーム回数 |
+| bestscore | 数値 | 最高スコア |
+
+### 2. normalrecords
+
+通常タイピングの1プレイごとの記録です。
+
+| 内部名 | 種類 |
+|---|---|
+| key | 1行テキスト |
+| clientid | 1行テキスト |
+| score | 数値 |
+| exp | 数値 |
+| accuracy | 数値 |
+| correctkeys | 数値 |
+| misskeys | 数値 |
+| completed | 数値 |
+| maxcombo | 数値 |
+| mode | 1行テキスト |
+| playdate | 日付と時刻 |
+
+### 3. officialrecords
+
+公式スプリントの完走記録です。
+
+| 内部名 | 種類 |
+|---|---|
+| key | 1行テキスト（PlayerCode） |
+| clientid | 1行テキスト |
+| tournamentid | 1行テキスト |
+| courseversion | 数値 |
+| timems | 数値 |
+| miss | 数値 |
+| correctkeys | 数値 |
+| accuracy | 数値 |
+| playdate | 日付と時刻 |
+
+### 4. tournament
+
+大会設定と参加者を同じリストで管理します。
+
+| 内部名 | 種類 | CONFIG行 | PARTICIPANT行 |
+|---|---|---|---|
+| key | 1行テキスト | `official01` | `123-AB` |
+| recordtype | 1行テキスト | `CONFIG` | `PARTICIPANT` |
+| tournamentid | 1行テキスト | `official01` | `official01` |
+| courseversion | 数値 | `1` | 空欄可 |
+| entrypassword | 1行テキスト | 大会パスワード | 空欄 |
+| active | はい/いいえ | はい | はい |
+| playercode | 1行テキスト | 空欄 | `123-AB` |
+
+大会ごとに有効な `CONFIG` 行は1件にします。公式大会への挑戦回数は無制限です。
+
+### 5. accesscounter
+
+アクセス数を保持します。
+
+| 内部名 | 種類 |
+|---|---|
+| key | 1行テキスト |
+| count | 数値 |
+
+`key=total` の行を1件使用します。存在しない場合はアプリが作成を試みます。
 
 ## プレイヤーコード
 
@@ -22,9 +131,9 @@ IE11互換モード（Edge IE modeを含む）で動作する、SharePoint連携
 
 例: `123-AB`
 
-通常ゲームでは同じ表示コードを使うことを許容します。通常ゲームの成長情報はCookieで生成した `ClientId` と組み合わせてSharePoint側で識別します。
+通常ゲームでは同じ表示コードを使うことを許容します。成長情報はCookieで生成した `clientid` と組み合わせて識別します。
 
-公式大会では `公式大会設定参加者` リストに参加者コードを1件だけ登録してください。同一大会・同一PlayerCodeが複数ある場合は入場を拒否します。
+公式大会では `tournament` リストに `PARTICIPANT` 行として参加者コードを登録します。同一大会・同一PlayerCodeが複数登録されている場合は入場を拒否します。
 
 ## 問題CSV
 
@@ -69,116 +178,15 @@ ID,漢字,ひらがな
 - 全問題を打ち切るまでの時間をミリ秒単位で計測
 - 挑戦回数は無制限
 - 中止した競技は記録しない
-- 大会ID・問題バージョンごとに記録を分離
+- `tournamentid` と `courseversion` ごとに記録を分離
 - 最速タイムでランキング
+- 入場には参加者登録と大会パスワードの両方が必要
 
-公式大会の入場には次の両方が必要です。
-
-1. `公式大会設定参加者` リストへの参加者登録
-2. 大会パスワード
-
-### 大会パスワードの注意
-
-このアプリはIE11で動くクライアントJavaScriptだけで構成されるため、パスワード入力は「大会入口のゲート」です。強いアクセス制御が必要な場合は、SharePointページ・リスト自体の閲覧権限を大会参加者グループに限定してください。
-
-## config.txt
-
-```text
-WEB_ROOT=AUTO
-TYPING_CSV=typing.csv
-OFFICIAL_CSV=official.csv
-PLAYER_LIST=プレイヤー情報
-NORMAL_RECORD_LIST=通常タイピング記録
-OFFICIAL_RECORD_LIST=公式タイピング記録
-TOURNAMENT_LIST=公式大会設定参加者
-COUNTER_LIST=アクセスカウンター
-NORMAL_SECONDS=60
-COOKIE_DAYS=365
-TOURNAMENT_ID=OFFICIAL-01
-OFFICIAL_WORDS_VERSION=1
-```
-
-`WEB_ROOT` は、できればSharePoint Webのパスを明示してください。
-
-例:
-
-```text
-WEB_ROOT=/sites/typing
-```
-
-`AUTO` は既存環境向けの自動判定です。
-
-## SharePointリスト
-
-リスト表示名は `config.txt` で変更できます。カスタム列は以下の **内部名（Internal Name）** で作成してください。
-
-### 1. プレイヤー情報
-
-| 内部名 | 種類 | 用途 |
-|---|---|---|
-| Title | 1行テキスト | PlayerCode |
-| ClientId | 1行テキスト | ローカル識別子 |
-| EXP | 数値 | 累計EXP |
-| Rank | 数値 | 現在ランク |
-| Plays | 数値 | 通常ゲーム回数 |
-| BestScore | 数値 | 最高スコア |
-
-### 2. 通常タイピング記録
-
-| 内部名 | 種類 |
-|---|---|
-| Title | 1行テキスト |
-| ClientId | 1行テキスト |
-| Score | 数値 |
-| EXP | 数値 |
-| Accuracy | 数値 |
-| CorrectKeys | 数値 |
-| MissKeys | 数値 |
-| Completed | 数値 |
-| MaxCombo | 数値 |
-| Mode | 1行テキスト |
-| PlayDate | 日付と時刻 |
-
-### 3. 公式タイピング記録
-
-| 内部名 | 種類 |
-|---|---|
-| Title | 1行テキスト（PlayerCode） |
-| ClientId | 1行テキスト |
-| TournamentId | 1行テキスト |
-| CourseVersion | 数値 |
-| TimeMs | 数値 |
-| Miss | 数値 |
-| CorrectKeys | 数値 |
-| Accuracy | 数値 |
-| PlayDate | 日付と時刻 |
-
-### 4. 公式大会設定参加者
-
-| 内部名 | 種類 | CONFIG行 | PARTICIPANT行 |
-|---|---|---|---|
-| Title | 1行テキスト | 大会名 | 任意 |
-| RecordType | 1行テキスト | `CONFIG` | `PARTICIPANT` |
-| TournamentId | 1行テキスト | `OFFICIAL-01` | `OFFICIAL-01` |
-| CourseVersion | 数値 | `1` | 空欄可 |
-| EntryPassword | 1行テキスト | 大会パスワード | 空欄 |
-| Active | はい/いいえ | はい | はい |
-| PlayerCode | 1行テキスト | 空欄 | `123-AB` |
-
-CONFIG行は大会ごとに有効なものを1件にしてください。
-
-### 5. アクセスカウンター
-
-| 内部名 | 種類 |
-|---|---|
-| Title | 1行テキスト |
-| Count | 数値 |
-
-`Title=Total` の行を1件使用します。存在しない場合はアプリが作成を試みます。
+大会パスワードはクライアントJavaScript上の入口制御です。強いアクセス制御が必要な場合は、SharePointページやリスト自体の閲覧権限も大会参加者に限定してください。
 
 ## ローマ字設定
 
-複数入力方法があるものを一覧からチェックできます。設定はCookieへ保存します。
+複数入力方法があるものを一覧から選択し、Cookieへ保存します。
 
 例:
 
@@ -202,4 +210,4 @@ JavaScriptはES5で記述し、次を使用していません。
 - `class`
 - ES Modules
 
-通信は `XMLHttpRequest`、SharePoint RESTは `application/json;odata=verbose` を使用しています。
+通信は `XMLHttpRequest`、SharePoint RESTは `application/json;odata=verbose` を使用します。
