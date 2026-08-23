@@ -1,0 +1,18 @@
+# SharePoint / typing app configuration
+# WEB_ROOT=AUTO の場合は現在のSharePoint URLからWebルートを自動判定します。
+WEB_ROOT=AUTO
+
+TYPING_CSV=typing.csv
+OFFICIAL_CSV=official.csv
+
+PLAYER_LIST=プレイヤー情報
+NORMAL_RECORD_LIST=通常タイピング記録
+OFFICIAL_RECORD_LIST=公式タイピング記録
+TOURNAMENT_LIST=公式大会設定参加者
+COUNTER_LIST=アクセスカウンター
+
+NORMAL_SECONDS=60
+COOKIE_DAYS=365
+
+TOURNAMENT_ID=OFFICIAL-01
+OFFICIAL_WORDS_VERSION=1
