@@ -1,16 +1,49 @@
 // sp.js
 // SharePoint REST API 共通処理
 // 接続・読込・追加・修正・削除
+// SharePointカスタム列は英小文字で統一
 // ES5 / XMLHttpRequest only
 (function (global) {
   "use strict";
+
+  /*
+   * app.js 内の従来名とSharePoint側の小文字内部名を対応させる。
+   * SharePoint標準の Id / Title はシステム列のため例外。
+   * Title に渡された値は、業務用の key と標準 Title の両方へ保存する。
+   */
+  var FIELD_MAP = {
+    "Title": "key",
+    "ClientId": "clientid",
+    "EXP": "exp",
+    "Rank": "rank",
+    "Plays": "plays",
+    "BestScore": "bestscore",
+    "Score": "score",
+    "Accuracy": "accuracy",
+    "CorrectKeys": "correctkeys",
+    "MissKeys": "misskeys",
+    "Completed": "completed",
+    "MaxCombo": "maxcombo",
+    "Mode": "mode",
+    "PlayDate": "playdate",
+    "TournamentId": "tournamentid",
+    "CourseVersion": "courseversion",
+    "TimeMs": "timems",
+    "Miss": "miss",
+    "RecordType": "recordtype",
+    "EntryPassword": "entrypassword",
+    "Active": "active",
+    "PlayerCode": "playercode",
+    "Count": "count"
+  };
 
   var SP = {
     webRoot: "",
     api: "",
     digest: "",
     digestExpire: 0,
-    entityTypes: {}
+    entityTypes: {},
+    fieldMap: FIELD_MAP
   };
 
   function detectWebRoot() {
@@ -25,6 +58,77 @@
 
     last = path.lastIndexOf("/");
     return last > 0 ? path.substring(0, last) : "";
+  }
+
+  function mapFieldName(name) {
+    var s = String(name || "");
+
+    if (s === "Id" || s === "ID") {
+      return "Id";
+    }
+
+    if (FIELD_MAP.hasOwnProperty(s)) {
+      return FIELD_MAP[s];
+    }
+
+    return s.toLowerCase();
+  }
+
+  function mapColumns(columns) {
+    var result = [];
+    var used = {};
+    var i;
+    var name;
+
+    for (i = 0; i < columns.length; i++) {
+      name = mapFieldName(columns[i]);
+      if (!used[name]) {
+        used[name] = true;
+        result.push(name);
+      }
+    }
+
+    return result;
+  }
+
+  function normalizeItem(item) {
+    var legacy;
+    var lower;
+
+    if (!item) {
+      return item;
+    }
+
+    for (legacy in FIELD_MAP) {
+      if (FIELD_MAP.hasOwnProperty(legacy)) {
+        lower = FIELD_MAP[legacy];
+        if (typeof item[legacy] === "undefined" && typeof item[lower] !== "undefined") {
+          item[legacy] = item[lower];
+        }
+      }
+    }
+
+    return item;
+  }
+
+  function mapData(data, includeSystemTitle) {
+    var result = {};
+    var key;
+    var mapped;
+
+    for (key in data) {
+      if (data.hasOwnProperty(key)) {
+        mapped = mapFieldName(key);
+        result[mapped] = data[key];
+
+        /* SharePoint標準 Title が必須設定でも保存できるようにする。 */
+        if (includeSystemTitle && key === "Title") {
+          result.Title = data[key];
+        }
+      }
+    }
+
+    return result;
   }
 
   /*
@@ -157,10 +261,12 @@
   /* listTitle, columns, success(items), error(xhr) */
   SP.load = function (listTitle, columns, success, error) {
     var title = escapeListTitle(listTitle);
+    var selectColumns;
     var url = SP.api + "/web/lists/getbytitle('" + title + "')/items?$top=5000";
 
     if (columns && columns.length) {
-      url += "&$select=" + encodeURIComponent(columns.join(","));
+      selectColumns = mapColumns(columns);
+      url += "&$select=" + encodeURIComponent(selectColumns.join(","));
     }
 
     xhr(
@@ -170,9 +276,18 @@
       null,
       function (req) {
         var data;
+        var items;
+        var i;
+
         try {
           data = JSON.parse(req.responseText);
-          success(data.d.results || []);
+          items = data.d.results || [];
+
+          for (i = 0; i < items.length; i++) {
+            normalizeItem(items[i]);
+          }
+
+          success(items);
         } catch (e) {
           if (error) {
             error(req);
@@ -187,12 +302,13 @@
     getEntityType(listTitle, function (entityType) {
       getDigest(function (digest) {
         var title = escapeListTitle(listTitle);
+        var mapped = mapData(data, true);
         var body = { "__metadata": { "type": entityType } };
         var key;
 
-        for (key in data) {
-          if (data.hasOwnProperty(key)) {
-            body[key] = data[key];
+        for (key in mapped) {
+          if (mapped.hasOwnProperty(key)) {
+            body[key] = mapped[key];
           }
         }
 
@@ -210,6 +326,9 @@
             if (req.responseText) {
               try {
                 result = JSON.parse(req.responseText);
+                if (result && result.d) {
+                  normalizeItem(result.d);
+                }
               } catch (e) {
                 result = null;
               }
@@ -228,12 +347,13 @@
     getEntityType(listTitle, function (entityType) {
       getDigest(function (digest) {
         var title = escapeListTitle(listTitle);
+        var mapped = mapData(data, true);
         var body = { "__metadata": { "type": entityType } };
         var key;
 
-        for (key in data) {
-          if (data.hasOwnProperty(key)) {
-            body[key] = data[key];
+        for (key in mapped) {
+          if (mapped.hasOwnProperty(key)) {
+            body[key] = mapped[key];
           }
         }
 
