@@ -11,7 +11,7 @@
   <div id="app">
     <div class="header">
       <div class="header-title">TYPING</div>
-      <div class="header-right">TEST <span id="testModeDisplay">players</span></div>
+      <div class="header-right">ACCESS <span id="accessCount">---</span></div>
       <div class="clear"></div>
     </div>
 
@@ -29,7 +29,7 @@
         <h1>タイピングゲーム</h1>
 
         <div class="diag-panel">
-          <h2>接続状況 / PLAYERS TEST</h2>
+          <h2>接続状況 / PLAYERS + ACCESSCOUNTER TEST</h2>
 
           <div id="diag-config" class="diag-row diag-wait">
             <span class="diag-name">CONFIG</span>
@@ -61,13 +61,26 @@
             <span id="diag-playerswrite-detail" class="diag-detail">PLAYER保存ボタンで書込試験</span>
           </div>
 
-          <div id="diag-others" class="diag-row diag-skip">
-            <span class="diag-name">その他4リスト</span>
-            <strong id="diag-others-status" class="diag-status">未接続</strong>
-            <span id="diag-others-detail" class="diag-detail">今回試験しません</span>
+          <div id="diag-counterread" class="diag-row diag-wait">
+            <span class="diag-name">COUNTER 読込</span>
+            <strong id="diag-counterread-status" class="diag-status">未確認</strong>
+            <span id="diag-counterread-detail" class="diag-detail">accesscounter 読込</span>
+          </div>
+
+          <div id="diag-counterwrite" class="diag-row diag-wait">
+            <span class="diag-name">COUNTER 書込</span>
+            <strong id="diag-counterwrite-status" class="diag-status">未確認</strong>
+            <span id="diag-counterwrite-detail" class="diag-detail">ページ読込時に1回加算</span>
+          </div>
+
+          <div id="diag-remaining" class="diag-row diag-skip">
+            <span class="diag-name">その他3リスト</span>
+            <strong class="diag-status">未接続</strong>
+            <span class="diag-detail">normalrecords / officialrecords / tournament は今回試験しません</span>
           </div>
 
           <button id="btnRetryPlayers" type="button" class="sub-button compact">players 再接続テスト</button>
+          <button id="btnRetryAccessCounter" type="button" class="sub-button compact">accesscounter 再読込テスト</button>
         </div>
 
         <div class="player-box">
@@ -90,7 +103,7 @@
 
         <div class="menu-buttons">
           <button id="btnNormal" type="button" class="main-button">通常タイピング<br><span>60秒スコアアタック / 成長情報のみplayersへ保存</span></button>
-          <button id="btnOfficial" type="button" class="main-button official-button">公式タイピング<br><span>現在未接続 / players試験完了後に接続</span></button>
+          <button id="btnOfficial" type="button" class="main-button official-button">公式タイピング<br><span>現在未接続 / players・accesscounter試験後に接続</span></button>
           <button id="btnSettings" type="button" class="sub-button">ローマ字入力設定</button>
         </div>
       </div>
@@ -147,7 +160,7 @@
       <div class="panel center">
         <h1>公式タイピング</h1>
         <div class="official-mark">OFFICIAL SPRINT</div>
-        <p>現在はplayers単独試験中です。</p>
+        <p>現在はplayers + accesscounter接続試験中です。</p>
       </div>
     </div>
 
@@ -175,5 +188,6 @@
   <script src="js/typing.js"></script>
   <script src="js/sp.js"></script>
   <script src="js/app.js"></script>
+  <script src="js/accesscounter.js"></script>
 </body>
 </html>
