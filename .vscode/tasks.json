@@ -1,0 +1,29 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "typ: start local server",
+      "type": "shell",
+      "command": "py",
+      "args": ["-m", "http.server", "5500"],
+      "isBackground": true,
+      "problemMatcher": {
+        "owner": "typ-local-server",
+        "pattern": {
+          "regexp": ".*"
+        },
+        "background": {
+          "activeOnStart": true,
+          "beginsPattern": "Serving HTTP on.*",
+          "endsPattern": ".*"
+        }
+      },
+      "presentation": {
+        "reveal": "silent",
+        "focus": false,
+        "panel": "dedicated",
+        "close": true
+      }
+    }
+  ]
+}

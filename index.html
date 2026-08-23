@@ -28,8 +28,10 @@
       <div class="panel">
         <h1>タイピングゲーム</h1>
 
-        <div class="diag-panel">
-          <h2>接続状況 / PLAYERS + ACCESSCOUNTER TEST</h2>
+        <div class="diag-panel collapsed" id="diagnosticsPanel">
+          <button id="btnToggleDiagnostics" type="button" class="diagnostics-toggle" aria-expanded="false">接続状況を表示</button>
+          <div id="diagnosticsContent" class="diagnostics-content">
+            <h2>接続状況 / PLAYERS + ACCESSCOUNTER TEST</h2>
 
           <div id="diag-config" class="diag-row diag-wait">
             <span class="diag-name">CONFIG</span>
@@ -79,19 +81,9 @@
             <span class="diag-detail">normalrecords / officialrecords / tournament は今回試験しません</span>
           </div>
 
-          <button id="btnRetryPlayers" type="button" class="sub-button compact">players 再接続テスト</button>
-          <button id="btnRetryAccessCounter" type="button" class="sub-button compact">accesscounter 再読込テスト</button>
-        </div>
-
-        <div class="player-box">
-          <h2>PLAYER</h2>
-          <div class="player-inputs">
-            <input id="playerNumber" class="code-number" type="text" maxlength="3" inputmode="numeric" autocomplete="off" placeholder="123">
-            <span class="code-separator">-</span>
-            <input id="playerNick" class="code-nick" type="text" maxlength="2" autocomplete="off" placeholder="AB">
-            <button id="btnSavePlayer" type="button" class="small-button">playersへ保存</button>
+            <button id="btnRetryPlayers" type="button" class="sub-button compact">players 再接続テスト</button>
+            <button id="btnRetryAccessCounter" type="button" class="sub-button compact">accesscounter 再読込テスト</button>
           </div>
-          <div id="playerCodeDisplay" class="player-code">--- --</div>
         </div>
 
         <div class="rank-box">
@@ -101,10 +93,37 @@
           <div id="homeBest" class="sub-text">BEST SCORE 0</div>
         </div>
 
-        <div class="menu-buttons">
-          <button id="btnNormal" type="button" class="main-button">通常タイピング<br><span>60秒スコアアタック / 成長情報のみplayersへ保存</span></button>
-          <button id="btnOfficial" type="button" class="main-button official-button">公式タイピング<br><span>現在未接続 / players・accesscounter試験後に接続</span></button>
-          <button id="btnSettings" type="button" class="sub-button">ローマ字入力設定</button>
+        <div class="home-sections">
+          <section class="home-section game-start-section">
+            <div class="home-section-heading">
+              <h2>ゲームスタート</h2>
+              <p>プレイするゲームを選択してください。</p>
+            </div>
+            <div class="menu-buttons">
+              <button id="btnNormal" type="button" class="main-button">通常タイピング<br><span>60秒スコアアタック / 成長情報のみplayersへ保存</span></button>
+              <button id="btnOfficial" type="button" class="main-button official-button">公式タイピング<br><span>現在未接続 / players・accesscounter試験後に接続</span></button>
+            </div>
+          </section>
+
+          <section class="home-section settings-home-section">
+            <div class="home-section-heading">
+              <h2>設定</h2>
+              <p>名前とローマ字入力の設定を変更できます。</p>
+            </div>
+            <div class="player-box">
+              <h3>名前の設定</h3>
+              <div class="player-inputs">
+                <input id="playerNumber" class="code-number" type="text" maxlength="3" inputmode="numeric" autocomplete="off" placeholder="123">
+                <span class="code-separator">-</span>
+                <input id="playerNick" class="code-nick" type="text" maxlength="2" autocomplete="off" placeholder="AB">
+                <button id="btnSavePlayer" type="button" class="small-button">playersへ保存</button>
+              </div>
+              <div id="playerCodeDisplay" class="player-code">--- --</div>
+            </div>
+            <div class="settings-link">
+              <button id="btnSettings" type="button" class="sub-button">ローマ字入力の設定</button>
+            </div>
+          </section>
         </div>
       </div>
     </div>

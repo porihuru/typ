@@ -1,0 +1,12 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "typ: run in Edge",
+      "type": "node-terminal",
+      "request": "launch",
+      "command": "Start-Process -FilePath 'C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe' -ArgumentList 'http://localhost:5500/index.html'",
+      "preLaunchTask": "typ: start local server"
+    }
+  ]
+}

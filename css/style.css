@@ -108,6 +108,79 @@ h2 {
   border-radius: 6px;
 }
 
+#viewHome .panel {
+  display: flex;
+  flex-direction: column;
+}
+
+#viewHome .diag-panel {
+  order: 10;
+}
+
+.home-sections {
+  width: 660px;
+  max-width: 100%;
+  margin: 0 auto 22px auto;
+  display: flex;
+  gap: 16px;
+  align-items: stretch;
+}
+
+.home-section {
+  flex: 1 1 0;
+  min-width: 0;
+  padding: 20px;
+  background: #111923;
+  border: 1px solid #2d3d53;
+  border-radius: 6px;
+}
+
+.home-section-heading {
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #2a3a4e;
+}
+
+.home-section-heading h2 {
+  margin-bottom: 5px;
+  color: #eef4fb;
+  font-size: 19px;
+  letter-spacing: 1px;
+}
+
+.home-section-heading p {
+  margin: 0;
+  color: #9eafc4;
+  font-size: 13px;
+}
+
+.game-start-section {
+  border-color: #356487;
+}
+
+.settings-home-section {
+  border-color: #46546a;
+}
+
+.diagnostics-toggle {
+  width: 100%;
+  padding: 9px 12px;
+  border: 1px solid #526b89;
+  border-radius: 4px;
+  background: #243349;
+  color: #dce8f5;
+  font-size: 12px;
+  text-align: left;
+}
+
+.diagnostics-content {
+  margin-top: 14px;
+}
+
+.diag-panel.collapsed .diagnostics-content {
+  display: none;
+}
+
 .diag-row {
   padding: 9px 8px;
   margin: 5px 0;
@@ -171,6 +244,38 @@ h2 {
   border: 1px solid #273548;
   border-radius: 6px;
   text-align: center;
+}
+
+.settings-home-section .player-box {
+  width: 100%;
+  margin-bottom: 16px;
+  padding: 16px;
+  background: #0d151f;
+}
+
+.settings-home-section .player-box h3 {
+  margin: 0 0 12px 0;
+  color: #dbe8f5;
+  font-size: 16px;
+}
+
+.home-section .menu-buttons,
+.home-section .settings-link {
+  width: 100%;
+}
+
+.home-section .player-inputs {
+  white-space: normal;
+}
+
+.home-section .main-button {
+  min-height: 68px;
+  padding: 10px 12px;
+  font-size: 18px;
+}
+
+.home-section .main-button span {
+  font-size: 11px;
 }
 
 .player-inputs {
@@ -249,6 +354,12 @@ h2 {
 }
 
 .menu-buttons {
+  width: 520px;
+  max-width: 100%;
+  margin: 0 auto;
+}
+
+.settings-link {
   width: 520px;
   max-width: 100%;
   margin: 0 auto;
@@ -539,6 +650,15 @@ h2 {
   .panel,
   .game-panel {
     padding: 18px 12px;
+  }
+
+  .home-sections {
+    display: block;
+  }
+
+  .home-section {
+    margin-bottom: 14px;
+    padding: 16px 12px;
   }
 
   h1 {

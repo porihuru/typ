@@ -95,6 +95,27 @@
     }
   }
 
+  function toggleDiagnostics() {
+    var panel = $("diagnosticsPanel");
+    var button = $("btnToggleDiagnostics");
+    var collapsed;
+
+    if (!panel || !button) {
+      return;
+    }
+
+    collapsed = panel.className.indexOf(" collapsed") >= 0;
+    if (collapsed) {
+      panel.className = panel.className.replace(" collapsed", "");
+      button.innerText = "接続状況を隠す";
+      button.setAttribute("aria-expanded", "true");
+    } else {
+      panel.className += " collapsed";
+      button.innerText = "接続状況を表示";
+      button.setAttribute("aria-expanded", "false");
+    }
+  }
+
   function initDiagnostics() {
     setDiag("config", "wait", "確認中", "config/config.txt");
     setDiag("csv", "wait", "確認中", "通常問題CSV");
@@ -653,6 +674,7 @@
   }
 
   function bindEvents() {
+    $("btnToggleDiagnostics").onclick = toggleDiagnostics;
     $("btnSavePlayer").onclick = function () { savePlayerFromInputs(true, true); };
     $("btnRetryPlayers").onclick = function () { testPlayersRead(); };
     $("btnNormal").onclick = startNormal;
