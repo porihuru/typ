@@ -1,0 +1,556 @@
+html, body {
+  margin: 0;
+  padding: 0;
+  min-height: 100%;
+  font-family: "Yu Gothic", "Meiryo", Arial, sans-serif;
+  background: #10151d;
+  color: #eef4fb;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+button, input {
+  font-family: inherit;
+}
+
+button {
+  cursor: pointer;
+}
+
+#app {
+  width: 100%;
+  min-height: 100vh;
+}
+
+.header {
+  height: 54px;
+  line-height: 54px;
+  padding: 0 24px;
+  background: #192230;
+  border-bottom: 1px solid #2c3b50;
+}
+
+.header-title {
+  float: left;
+  font-weight: bold;
+  letter-spacing: 4px;
+  font-size: 18px;
+}
+
+.header-right {
+  float: right;
+  color: #a9bad0;
+  font-size: 12px;
+  letter-spacing: 1px;
+}
+
+.clear {
+  clear: both;
+}
+
+.status-bar {
+  min-height: 28px;
+  line-height: 28px;
+  padding: 0 20px;
+  background: #0b0f15;
+  color: #8ea1b9;
+  text-align: center;
+  font-size: 12px;
+}
+
+.view {
+  display: none;
+  padding: 28px 14px 60px 14px;
+}
+
+.active-view {
+  display: block;
+}
+
+.panel,
+.game-panel {
+  width: 760px;
+  max-width: 100%;
+  margin: 0 auto;
+  padding: 28px;
+  background: #18212e;
+  border: 1px solid #2d3a4c;
+  border-radius: 8px;
+  box-shadow: 0 12px 35px rgba(0, 0, 0, 0.25);
+}
+
+.center {
+  text-align: center;
+}
+
+h1 {
+  margin: 0 0 24px 0;
+  font-size: 30px;
+  letter-spacing: 2px;
+}
+
+h2 {
+  margin: 0 0 12px 0;
+  font-size: 14px;
+  color: #9cb0c8;
+  letter-spacing: 2px;
+}
+
+.player-box,
+.rank-box {
+  width: 520px;
+  max-width: 100%;
+  margin: 0 auto 20px auto;
+  padding: 18px;
+  background: #111923;
+  border: 1px solid #273548;
+  border-radius: 6px;
+  text-align: center;
+}
+
+.player-inputs {
+  white-space: nowrap;
+}
+
+.code-number,
+.code-nick,
+.password-input {
+  height: 42px;
+  padding: 5px 10px;
+  background: #0b1017;
+  color: #ffffff;
+  border: 1px solid #42546d;
+  border-radius: 4px;
+  font-size: 20px;
+  text-align: center;
+  text-transform: uppercase;
+}
+
+.code-number {
+  width: 82px;
+}
+
+.code-nick {
+  width: 68px;
+}
+
+.code-separator {
+  padding: 0 5px;
+  font-weight: bold;
+}
+
+.small-button {
+  height: 42px;
+  margin-left: 10px;
+  padding: 0 16px;
+  border: 1px solid #526b89;
+  border-radius: 4px;
+  background: #243349;
+  color: #ffffff;
+}
+
+.player-code {
+  margin-top: 14px;
+  font-size: 28px;
+  font-weight: bold;
+  letter-spacing: 3px;
+}
+
+.rank-name {
+  font-size: 24px;
+  font-weight: bold;
+  margin-bottom: 6px;
+}
+
+.exp-text,
+.sub-text {
+  color: #a8bad0;
+  font-size: 13px;
+}
+
+.progress {
+  width: 100%;
+  height: 12px;
+  margin: 12px 0;
+  background: #0a0e14;
+  border: 1px solid #293a50;
+  overflow: hidden;
+}
+
+.progress-inner {
+  height: 100%;
+  width: 0;
+  background: #4bb8ff;
+}
+
+.menu-buttons {
+  width: 520px;
+  max-width: 100%;
+  margin: 0 auto;
+}
+
+.main-button,
+.sub-button,
+.abort-button {
+  display: block;
+  width: 100%;
+  border-radius: 6px;
+  color: #ffffff;
+}
+
+.main-button {
+  min-height: 72px;
+  margin: 12px 0;
+  padding: 12px 18px;
+  border: 1px solid #42a5e9;
+  background: #176da7;
+  font-size: 21px;
+  font-weight: bold;
+}
+
+.main-button span {
+  display: block;
+  margin-top: 5px;
+  font-size: 12px;
+  font-weight: normal;
+  color: #d7efff;
+}
+
+.official-button {
+  border-color: #d3a843;
+  background: #765819;
+}
+
+.sub-button {
+  min-height: 44px;
+  margin: 10px 0;
+  padding: 8px 14px;
+  border: 1px solid #44566e;
+  background: #202c3b;
+  font-size: 15px;
+}
+
+.compact {
+  width: 340px;
+  max-width: 100%;
+  min-height: 52px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.game-panel {
+  position: relative;
+  min-height: 520px;
+  text-align: center;
+}
+
+.game-top {
+  padding-bottom: 18px;
+  border-bottom: 1px solid #2c3a4d;
+}
+
+.game-stat {
+  float: left;
+  width: 33.333%;
+  text-align: center;
+}
+
+.game-stat .label {
+  display: block;
+  color: #8fa4be;
+  font-size: 11px;
+  letter-spacing: 2px;
+}
+
+.game-stat .value {
+  display: block;
+  margin-top: 5px;
+  font-size: 28px;
+  font-weight: bold;
+}
+
+.word-area {
+  padding: 60px 10px 45px 10px;
+}
+
+.kanji {
+  min-height: 70px;
+  font-size: 50px;
+  font-weight: bold;
+  letter-spacing: 4px;
+}
+
+.kana {
+  min-height: 32px;
+  margin-top: 8px;
+  color: #b9c7d8;
+  font-size: 22px;
+}
+
+.guide {
+  min-height: 34px;
+  margin-top: 20px;
+  color: #6e849e;
+  font-family: Consolas, "Courier New", monospace;
+  font-size: 20px;
+  letter-spacing: 2px;
+}
+
+.typed-line {
+  min-height: 52px;
+  margin-top: 12px;
+  font-family: Consolas, "Courier New", monospace;
+  font-size: 32px;
+  letter-spacing: 2px;
+}
+
+.typed {
+  color: #6dd6ff;
+}
+
+.cursor {
+  color: #ffffff;
+}
+
+.game-bottom {
+  padding: 15px 0;
+  border-top: 1px solid #2c3a4d;
+  color: #9eb1c9;
+}
+
+.game-bottom span {
+  display: inline-block;
+  min-width: 150px;
+  margin: 4px;
+}
+
+.abort-button {
+  width: 220px;
+  min-height: 38px;
+  margin: 12px auto 0 auto;
+  border: 1px solid #704950;
+  background: #3e262a;
+  font-size: 13px;
+}
+
+.countdown {
+  position: absolute;
+  z-index: 5;
+  left: 0;
+  right: 0;
+  top: 170px;
+  font-size: 100px;
+  font-weight: bold;
+  color: #ffffff;
+  text-shadow: 0 4px 18px #000000;
+}
+
+.result-score {
+  margin: 15px 0 25px 0;
+  font-size: 64px;
+  font-weight: bold;
+}
+
+.result-grid {
+  width: 520px;
+  max-width: 100%;
+  margin: 0 auto 18px auto;
+}
+
+.result-grid div {
+  display: inline-block;
+  width: 47%;
+  min-height: 44px;
+  margin: 4px 1%;
+  padding: 12px 8px;
+  background: #101720;
+  border: 1px solid #29374a;
+  vertical-align: top;
+}
+
+.result-rank {
+  margin: 18px 0 10px 0;
+  font-size: 22px;
+  font-weight: bold;
+}
+
+.rank-up {
+  width: 360px;
+  max-width: 100%;
+  margin: 0 auto 15px auto;
+  padding: 12px;
+  border: 1px solid #e9c75e;
+  background: #6f5919;
+  font-size: 25px;
+  font-weight: bold;
+  letter-spacing: 2px;
+}
+
+.hidden {
+  display: none !important;
+}
+
+.save-status,
+.error-message {
+  min-height: 24px;
+  margin: 12px 0;
+  font-size: 13px;
+}
+
+.error-message {
+  color: #ff9a9a;
+}
+
+.official-mark {
+  display: inline-block;
+  margin-bottom: 20px;
+  padding: 7px 16px;
+  border: 1px solid #cba341;
+  color: #ffd970;
+  letter-spacing: 3px;
+  font-size: 13px;
+}
+
+.login-player,
+.official-info {
+  margin: 12px 0;
+  font-size: 18px;
+}
+
+.password-label {
+  display: block;
+  margin: 28px 0 8px 0;
+  color: #a8bad0;
+}
+
+.password-input {
+  width: 320px;
+  max-width: 100%;
+  text-transform: none;
+}
+
+.notice {
+  margin: 24px auto;
+  color: #9fb1c7;
+  font-size: 13px;
+  line-height: 1.8;
+}
+
+.sprint-time {
+  margin: 25px 0 30px 0;
+  font-size: 60px;
+  font-weight: bold;
+  color: #ffd86a;
+}
+
+.settings-panel {
+  width: 900px;
+}
+
+.settings-panel > p {
+  color: #a6b6c9;
+}
+
+.setting-section {
+  margin: 22px 0;
+  padding: 16px;
+  background: #111923;
+  border: 1px solid #28374a;
+}
+
+.setting-section h3 {
+  margin: 0 0 12px 0;
+  color: #79cfff;
+}
+
+.romaji-setting-row {
+  padding: 9px 4px;
+  border-top: 1px solid #223043;
+}
+
+.setting-kana {
+  display: inline-block;
+  width: 72px;
+  font-size: 20px;
+  font-weight: bold;
+  vertical-align: middle;
+}
+
+.setting-option {
+  display: inline-block;
+  min-width: 105px;
+  margin: 3px 10px 3px 0;
+  font-family: Consolas, "Courier New", monospace;
+  vertical-align: middle;
+}
+
+.setting-option input {
+  width: 18px;
+  height: 18px;
+  vertical-align: middle;
+}
+
+.settings-actions {
+  margin-top: 25px;
+}
+
+@media screen and (max-width: 600px) {
+  .header {
+    padding: 0 12px;
+  }
+
+  .view {
+    padding: 14px 8px 40px 8px;
+  }
+
+  .panel,
+  .game-panel {
+    padding: 18px 12px;
+  }
+
+  h1 {
+    font-size: 24px;
+  }
+
+  .kanji {
+    min-height: 55px;
+    font-size: 38px;
+  }
+
+  .kana {
+    font-size: 19px;
+  }
+
+  .guide {
+    font-size: 16px;
+  }
+
+  .typed-line {
+    font-size: 25px;
+  }
+
+  .game-stat .value {
+    font-size: 20px;
+  }
+
+  .game-bottom span {
+    min-width: 90px;
+  }
+
+  .result-score,
+  .sprint-time {
+    font-size: 44px;
+  }
+
+  .result-grid div {
+    width: 98%;
+  }
+
+  .setting-kana {
+    display: block;
+    width: 100%;
+    margin-bottom: 6px;
+  }
+}
