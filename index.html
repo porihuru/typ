@@ -11,7 +11,7 @@
   <div id="app">
     <div class="header">
       <div class="header-title">TYPING</div>
-      <div class="header-right">ACCESS <span id="accessCount">---</span></div>
+      <div class="header-right">TEST <span id="testModeDisplay">players</span></div>
       <div class="clear"></div>
     </div>
 
@@ -28,13 +28,55 @@
       <div class="panel">
         <h1>タイピングゲーム</h1>
 
+        <div class="diag-panel">
+          <h2>接続状況 / PLAYERS TEST</h2>
+
+          <div id="diag-config" class="diag-row diag-wait">
+            <span class="diag-name">CONFIG</span>
+            <strong id="diag-config-status" class="diag-status">確認中</strong>
+            <span id="diag-config-detail" class="diag-detail">config/config.txt</span>
+          </div>
+
+          <div id="diag-csv" class="diag-row diag-wait">
+            <span class="diag-name">CSV</span>
+            <strong id="diag-csv-status" class="diag-status">確認中</strong>
+            <span id="diag-csv-detail" class="diag-detail">通常問題CSV</span>
+          </div>
+
+          <div id="diag-sp" class="diag-row diag-wait">
+            <span class="diag-name">SHAREPOINT</span>
+            <strong id="diag-sp-status" class="diag-status">未確認</strong>
+            <span id="diag-sp-detail" class="diag-detail">SharePoint REST API</span>
+          </div>
+
+          <div id="diag-playersread" class="diag-row diag-wait">
+            <span class="diag-name">PLAYERS 読込</span>
+            <strong id="diag-playersread-status" class="diag-status">未確認</strong>
+            <span id="diag-playersread-detail" class="diag-detail">players 読込</span>
+          </div>
+
+          <div id="diag-playerswrite" class="diag-row diag-wait">
+            <span class="diag-name">PLAYERS 書込</span>
+            <strong id="diag-playerswrite-status" class="diag-status">未確認</strong>
+            <span id="diag-playerswrite-detail" class="diag-detail">PLAYER保存ボタンで書込試験</span>
+          </div>
+
+          <div id="diag-others" class="diag-row diag-skip">
+            <span class="diag-name">その他4リスト</span>
+            <strong id="diag-others-status" class="diag-status">未接続</strong>
+            <span id="diag-others-detail" class="diag-detail">今回試験しません</span>
+          </div>
+
+          <button id="btnRetryPlayers" type="button" class="sub-button compact">players 再接続テスト</button>
+        </div>
+
         <div class="player-box">
           <h2>PLAYER</h2>
           <div class="player-inputs">
             <input id="playerNumber" class="code-number" type="text" maxlength="3" inputmode="numeric" autocomplete="off" placeholder="123">
             <span class="code-separator">-</span>
             <input id="playerNick" class="code-nick" type="text" maxlength="2" autocomplete="off" placeholder="AB">
-            <button id="btnSavePlayer" type="button" class="small-button">保存</button>
+            <button id="btnSavePlayer" type="button" class="small-button">playersへ保存</button>
           </div>
           <div id="playerCodeDisplay" class="player-code">--- --</div>
         </div>
@@ -47,8 +89,8 @@
         </div>
 
         <div class="menu-buttons">
-          <button id="btnNormal" type="button" class="main-button">通常タイピング<br><span>60秒スコアアタック</span></button>
-          <button id="btnOfficial" type="button" class="main-button official-button">公式タイピング<br><span>全問題スプリント / 参加者限定</span></button>
+          <button id="btnNormal" type="button" class="main-button">通常タイピング<br><span>60秒スコアアタック / 成長情報のみplayersへ保存</span></button>
+          <button id="btnOfficial" type="button" class="main-button official-button">公式タイピング<br><span>現在未接続 / players試験完了後に接続</span></button>
           <button id="btnSettings" type="button" class="sub-button">ローマ字入力設定</button>
         </div>
       </div>
@@ -105,67 +147,13 @@
       <div class="panel center">
         <h1>公式タイピング</h1>
         <div class="official-mark">OFFICIAL SPRINT</div>
-        <p>固定された全単語を、毎回ランダムな順番で入力します。</p>
-        <div class="login-player">PLAYER <strong id="officialPlayer">---</strong></div>
-        <label class="password-label" for="officialPassword">大会パスワード</label>
-        <input id="officialPassword" class="password-input" type="password" autocomplete="off">
-        <div id="officialLoginMessage" class="error-message"></div>
-        <button id="btnOfficialEnter" type="button" class="main-button compact">大会に入る</button>
-        <button id="btnOfficialBack" type="button" class="sub-button">戻る</button>
+        <p>現在はplayers単独試験中です。</p>
       </div>
     </div>
 
-    <div id="viewOfficialReady" class="view">
-      <div class="panel center">
-        <div class="official-mark">OFFICIAL SPRINT</div>
-        <h1 id="officialTournamentTitle">公式大会</h1>
-        <div class="official-info">PLAYER <strong id="officialReadyPlayer">---</strong></div>
-        <div class="official-info">WORDS <strong id="officialWordCount">0</strong></div>
-        <div class="official-info">VERSION <strong id="officialVersion">1</strong></div>
-        <p class="notice">挑戦回数に制限はありません。全問完走した記録だけ保存されます。</p>
-        <button id="btnOfficialStart" type="button" class="main-button compact">START</button>
-        <button id="btnOfficialReadyBack" type="button" class="sub-button">戻る</button>
-      </div>
-    </div>
-
-    <div id="viewOfficialGame" class="view">
-      <div class="game-panel official-game">
-        <div class="game-top">
-          <div class="game-stat"><span class="label">TIME</span><span id="officialTime" class="value">0.000</span></div>
-          <div class="game-stat"><span class="label">PROGRESS</span><span id="officialProgress" class="value">0 / 0</span></div>
-          <div class="game-stat"><span class="label">MISS</span><span id="officialMiss" class="value">0</span></div>
-          <div class="clear"></div>
-        </div>
-
-        <div id="officialCountdown" class="countdown"></div>
-        <div id="officialWordArea" class="word-area">
-          <div id="officialKanji" class="kanji">---</div>
-          <div id="officialKana" class="kana">---</div>
-          <div id="officialGuide" class="guide">---</div>
-          <div class="typed-line"><span id="officialTyped" class="typed"></span><span class="cursor">_</span></div>
-        </div>
-
-        <button id="btnAbortOfficial" type="button" class="abort-button">中止（記録なし）</button>
-      </div>
-    </div>
-
-    <div id="viewOfficialResult" class="view">
-      <div class="panel center">
-        <div class="official-mark">FINISH</div>
-        <div id="officialResultTime" class="sprint-time">0.000 秒</div>
-        <div class="result-grid">
-          <div>完走 <strong id="officialResultWords">0</strong>問</div>
-          <div>正打 <strong id="officialResultCorrect">0</strong></div>
-          <div>ミス <strong id="officialResultMiss">0</strong></div>
-          <div>正確率 <strong id="officialResultAccuracy">0%</strong></div>
-        </div>
-        <div id="officialBest" class="result-rank"></div>
-        <div id="officialRank" class="result-rank"></div>
-        <div id="officialSaveStatus" class="save-status"></div>
-        <button id="btnOfficialAgain" type="button" class="main-button compact">もう一度</button>
-        <button id="btnOfficialHome" type="button" class="sub-button">トップへ</button>
-      </div>
-    </div>
+    <div id="viewOfficialReady" class="view"></div>
+    <div id="viewOfficialGame" class="view"></div>
+    <div id="viewOfficialResult" class="view"></div>
 
     <div id="viewSettings" class="view">
       <div class="panel settings-panel">
