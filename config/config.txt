@@ -1,6 +1,6 @@
 # SharePoint / typing app configuration
-# players単独接続試験
-TEST_MODE=players
+# players + accesscounter 接続試験
+TEST_MODE=players_accesscounter
 
 # WEB_ROOT=AUTO の場合は現在のSharePoint URLからWebルートを自動判定します。
 # 接続できない場合は /sites/xxxx のように明示してください。
@@ -16,7 +16,8 @@ OFFICIAL_RECORD_LIST=officialrecords
 TOURNAMENT_LIST=tournament
 COUNTER_LIST=accesscounter
 
-# TEST_MODE=players の間は、上記のうち PLAYER_LIST 以外へREST通信しません。
+# 現在の試験対象は players と accesscounter。
+# normalrecords / officialrecords / tournament にはまだREST通信しません。
 NORMAL_SECONDS=60
 COOKIE_DAYS=365
 
