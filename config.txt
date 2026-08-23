@@ -5,14 +5,15 @@ WEB_ROOT=AUTO
 TYPING_CSV=typing.csv
 OFFICIAL_CSV=official.csv
 
-PLAYER_LIST=プレイヤー情報
-NORMAL_RECORD_LIST=通常タイピング記録
-OFFICIAL_RECORD_LIST=公式タイピング記録
-TOURNAMENT_LIST=公式大会設定参加者
-COUNTER_LIST=アクセスカウンター
+# SharePoint list names: lowercase alphabet only
+PLAYER_LIST=players
+NORMAL_RECORD_LIST=normalrecords
+OFFICIAL_RECORD_LIST=officialrecords
+TOURNAMENT_LIST=tournament
+COUNTER_LIST=accesscounter
 
 NORMAL_SECONDS=60
 COOKIE_DAYS=365
 
-TOURNAMENT_ID=OFFICIAL-01
+TOURNAMENT_ID=official01
 OFFICIAL_WORDS_VERSION=1
