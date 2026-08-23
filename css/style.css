@@ -98,6 +98,69 @@ h2 {
   letter-spacing: 2px;
 }
 
+.diag-panel {
+  width: 660px;
+  max-width: 100%;
+  margin: 0 auto 22px auto;
+  padding: 16px;
+  background: #0d141d;
+  border: 1px solid #324158;
+  border-radius: 6px;
+}
+
+.diag-row {
+  padding: 9px 8px;
+  margin: 5px 0;
+  border: 1px solid #2a3749;
+  background: #131c28;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.diag-name {
+  display: inline-block;
+  width: 125px;
+  font-weight: bold;
+  color: #c7d5e6;
+}
+
+.diag-status {
+  display: inline-block;
+  width: 72px;
+  text-align: center;
+}
+
+.diag-detail {
+  display: inline;
+  color: #aab9cc;
+  word-break: break-all;
+}
+
+.diag-ok {
+  border-color: #3a7054;
+}
+
+.diag-ok .diag-status {
+  color: #7fe2aa;
+}
+
+.diag-ng {
+  border-color: #78474c;
+}
+
+.diag-ng .diag-status {
+  color: #ff9c9c;
+}
+
+.diag-wait .diag-status {
+  color: #ffd879;
+}
+
+.diag-skip .diag-status,
+.diag-skip .diag-detail {
+  color: #7f91a8;
+}
+
 .player-box,
 .rank-box {
   width: 520px;
@@ -219,8 +282,8 @@ h2 {
 }
 
 .official-button {
-  border-color: #d3a843;
-  background: #765819;
+  border-color: #6f654f;
+  background: #4a402b;
 }
 
 .sub-button {
@@ -413,38 +476,6 @@ h2 {
   font-size: 13px;
 }
 
-.login-player,
-.official-info {
-  margin: 12px 0;
-  font-size: 18px;
-}
-
-.password-label {
-  display: block;
-  margin: 28px 0 8px 0;
-  color: #a8bad0;
-}
-
-.password-input {
-  width: 320px;
-  max-width: 100%;
-  text-transform: none;
-}
-
-.notice {
-  margin: 24px auto;
-  color: #9fb1c7;
-  font-size: 13px;
-  line-height: 1.8;
-}
-
-.sprint-time {
-  margin: 25px 0 30px 0;
-  font-size: 60px;
-  font-weight: bold;
-  color: #ffd86a;
-}
-
 .settings-panel {
   width: 900px;
 }
@@ -514,6 +545,27 @@ h2 {
     font-size: 24px;
   }
 
+  .diag-name,
+  .diag-status,
+  .diag-detail {
+    display: block;
+    width: 100%;
+    text-align: left;
+  }
+
+  .diag-status {
+    margin: 3px 0;
+  }
+
+  .player-inputs {
+    white-space: normal;
+  }
+
+  .small-button {
+    margin-top: 8px;
+    margin-left: 0;
+  }
+
   .kanji {
     min-height: 55px;
     font-size: 38px;
@@ -539,8 +591,7 @@ h2 {
     min-width: 90px;
   }
 
-  .result-score,
-  .sprint-time {
+  .result-score {
     font-size: 44px;
   }
 
