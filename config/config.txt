@@ -2,8 +2,8 @@
 # WEB_ROOT=AUTO の場合は現在のSharePoint URLからWebルートを自動判定します。
 WEB_ROOT=AUTO
 
-TYPING_CSV=typing.csv
-OFFICIAL_CSV=official.csv
+TYPING_CSV=csv/typing.csv
+OFFICIAL_CSV=csv/official.csv
 
 # SharePoint list names: lowercase alphabet only
 PLAYER_LIST=players

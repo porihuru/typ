@@ -179,6 +179,11 @@
     parseCSV: parseCSV,
     rowsToObjects: rowsToObjects,
     loadConfig: function (url, success, error) {
+      // app.js はIE11互換を保つため従来の config.txt 名で呼ぶ。
+      // 実ファイルは config フォルダに配置する。
+      if (String(url || "").toLowerCase() === "config.txt") {
+        url = "config/config.txt";
+      }
       requestText(url, function (text) {
         success(parseConfig(text));
       }, error);
