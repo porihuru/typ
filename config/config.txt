@@ -2,9 +2,10 @@
 # players + accesscounter 接続試験
 TEST_MODE=players_accesscounter
 
-# WEB_ROOT=AUTO の場合は現在のSharePoint URLからWebルートを自動判定します。
-# 接続できない場合は /sites/xxxx のように明示してください。
-WEB_ROOT=AUTO
+# SharePoint Web root
+# players リストの場所:
+# https://na-n.gbase.gsdf.mod.go.jp/na/NA/NAFin/fin_csm/Lists/players/AllItems.aspx
+WEB_ROOT=/na/NA/NAFin/fin_csm
 
 TYPING_CSV=csv/typing.csv
 OFFICIAL_CSV=csv/official.csv
