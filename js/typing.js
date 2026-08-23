@@ -132,15 +132,40 @@
     return level;
   }
 
+  /*
+   * ランクに応じた問題を優先するが、出題候補が少なすぎると
+   * 同じ単語ばかり繰り返すため、最低15問の候補を確保する。
+   * 不足分は次に易しいレベルから順に補充する。
+   */
   function filterWords(words, maxLevel) {
     var result = [];
+    var extra = [];
+    var minPool = 15;
     var i;
+
     for (i = 0; i < words.length; i++) {
       if (estimateLevel(words[i]) <= maxLevel) {
         result.push(words[i]);
+      } else {
+        extra.push(words[i]);
       }
     }
-    return result.length ? result : words.slice(0);
+
+    if (result.length === 0) {
+      return words.slice(0);
+    }
+
+    if (result.length < minPool && result.length < words.length) {
+      extra.sort(function (a, b) {
+        return estimateLevel(a) - estimateLevel(b);
+      });
+
+      for (i = 0; i < extra.length && result.length < minPool; i++) {
+        result.push(extra[i]);
+      }
+    }
+
+    return result;
   }
 
   var RANKS = [
