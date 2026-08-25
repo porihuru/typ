@@ -19,7 +19,7 @@ COUNTER_LIST=accesscounter
 
 # 現在の試験対象は players と accesscounter。
 # normalrecords / officialrecords / tournament にはまだREST通信しません。
-NORMAL_SECONDS=10
+NORMAL_SECONDS=30
 COOKIE_DAYS=365
 
 TOURNAMENT_ID=official01

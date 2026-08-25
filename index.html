@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>タイピングゲーム</title>
+  <title>タイピングの練習</title>
   <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
@@ -19,14 +19,82 @@
 
     <div id="viewLoading" class="view active-view">
       <div class="panel center">
-        <h1>タイピングゲーム</h1>
+        <h1>タイピングの練習</h1>
         <p>設定と問題データを読み込んでいます。</p>
       </div>
     </div>
 
     <div id="viewHome" class="view">
       <div class="panel">
-        <h1>タイピングゲーム</h1>
+        <div class="home-intro">
+          <div>
+            <div class="eyebrow">10 / 30 / 60 SECOND TRAINING</div>
+            <h1>タイピングの練習</h1>
+          </div>
+          <p>時間を選んで、すぐに練習を始めましょう。</p>
+        </div>
+
+        <div class="home-dashboard">
+          <section class="home-card game-start-section">
+            <div class="home-card-heading">
+              <span class="step-label">01</span>
+              <div>
+                <h2>練習する</h2>
+                <p>10・30・60秒から選択</p>
+              </div>
+            </div>
+            <div class="menu-buttons">
+              <div class="duration-selector" role="group" aria-label="競技時間">
+                <span class="duration-label">競技時間</span>
+                <button id="btnTime10" type="button" class="duration-button">10秒</button>
+                <button id="btnTime30" type="button" class="duration-button selected">30秒</button>
+                <button id="btnTime60" type="button" class="duration-button">60秒</button>
+              </div>
+              <button id="btnNormal" type="button" class="main-button">
+                <span class="button-title">通常タイピング</span>
+                <span id="normalDurationText" class="button-meta">30秒スコアアタックを開始</span>
+              </button>
+              <button id="btnOfficial" type="button" class="main-button official-button">
+                <span class="button-title">公式タイピング</span>
+                <span class="button-meta">準備中のコース</span>
+              </button>
+            </div>
+          </section>
+
+          <section class="home-card player-section">
+            <div class="home-card-heading">
+              <span class="step-label">02</span>
+              <div>
+                <h2>名前と入力の設定</h2>
+                <p>名前を登録し、入力方法を設定</p>
+              </div>
+            </div>
+            <div class="player-box">
+              <div class="player-code-label">現在の名前</div>
+              <div id="playerCodeDisplay" class="player-code">--- --</div>
+              <button id="btnSavePlayer" type="button" class="small-button name-input-button">名前の入力</button>
+              <input id="playerNumber" type="hidden">
+              <input id="playerNick" type="hidden">
+            </div>
+            <button id="btnSettings" type="button" class="sub-button settings-button">ローマ字入力の設定</button>
+          </section>
+
+          <section class="home-card progress-section">
+            <div class="home-card-heading">
+              <span class="step-label">03</span>
+              <div>
+                <h2>成長</h2>
+                <p>現在のランクと記録</p>
+              </div>
+            </div>
+            <div class="rank-box">
+              <div class="rank-name" id="homeRank">ビギナー</div>
+              <div class="exp-text"><strong id="homeExp">0</strong> EXP</div>
+              <div class="progress"><div id="homeExpBar" class="progress-inner"></div></div>
+              <div id="homeBest" class="sub-text">BEST SCORE 0</div>
+            </div>
+          </section>
+        </div>
 
         <div class="diag-panel collapsed" id="diagnosticsPanel">
           <button id="btnToggleDiagnostics" type="button" class="diagnostics-toggle" aria-expanded="false">接続状況を表示</button>
@@ -85,53 +153,13 @@
             <button id="btnRetryAccessCounter" type="button" class="sub-button compact">accesscounter 再読込テスト</button>
           </div>
         </div>
-
-        <div class="rank-box">
-          <div class="rank-name" id="homeRank">ビギナー</div>
-          <div class="exp-text"><span id="homeExp">0</span> EXP</div>
-          <div class="progress"><div id="homeExpBar" class="progress-inner"></div></div>
-          <div id="homeBest" class="sub-text">BEST SCORE 0</div>
-        </div>
-
-        <div class="home-sections">
-          <section class="home-section game-start-section">
-            <div class="home-section-heading">
-              <h2>ゲームスタート</h2>
-              <p>プレイするゲームを選択してください。</p>
-            </div>
-            <div class="menu-buttons">
-              <button id="btnNormal" type="button" class="main-button">通常タイピング<br><span>60秒スコアアタック / 成長情報のみplayersへ保存</span></button>
-              <button id="btnOfficial" type="button" class="main-button official-button">公式タイピング<br><span>現在未接続 / players・accesscounter試験後に接続</span></button>
-            </div>
-          </section>
-
-          <section class="home-section settings-home-section">
-            <div class="home-section-heading">
-              <h2>設定</h2>
-              <p>名前とローマ字入力の設定を変更できます。</p>
-            </div>
-            <div class="player-box">
-              <h3>名前の設定</h3>
-              <div class="player-inputs">
-                <input id="playerNumber" class="code-number" type="text" maxlength="3" inputmode="numeric" autocomplete="off" placeholder="123">
-                <span class="code-separator">-</span>
-                <input id="playerNick" class="code-nick" type="text" maxlength="2" autocomplete="off" placeholder="AB">
-                <button id="btnSavePlayer" type="button" class="small-button">playersへ保存</button>
-              </div>
-              <div id="playerCodeDisplay" class="player-code">--- --</div>
-            </div>
-            <div class="settings-link">
-              <button id="btnSettings" type="button" class="sub-button">ローマ字入力の設定</button>
-            </div>
-          </section>
-        </div>
       </div>
     </div>
 
     <div id="viewNormalGame" class="view">
       <div class="game-panel">
         <div class="game-top">
-          <div class="game-stat"><span class="label">TIME</span><span id="normalTime" class="value">60.0</span></div>
+          <div class="game-stat"><span class="label">TIME</span><span id="normalTime" class="value">30.0</span></div>
           <div class="game-stat"><span class="label">SCORE</span><span id="normalScore" class="value">0</span></div>
           <div class="game-stat"><span class="label">COMBO</span><span id="normalCombo" class="value">0</span></div>
           <div class="clear"></div>
@@ -196,6 +224,7 @@
           <button id="btnSaveSettings" type="button" class="main-button compact">設定を保存</button>
           <button id="btnResetSettings" type="button" class="sub-button">標準に戻す</button>
           <button id="btnSettingsBack" type="button" class="sub-button">戻る</button>
+          <button id="btnClearSavedData" type="button" class="sub-button reset-data-button">保存データの初期化</button>
         </div>
       </div>
     </div>

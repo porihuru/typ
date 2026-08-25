@@ -41,7 +41,7 @@
     queueIndex: 0,
     wordHadMiss: false,
     stats: null,
-    normalSeconds: 60
+    normalSeconds: 30
   };
 
   function $(id) {
@@ -338,16 +338,7 @@
     }, writeError);
   }
 
-  function savePlayerFromInputs(showAlert, writeSharePoint) {
-    var code = Settings.makePlayerCode($("playerNumber").value, $("playerNick").value);
-
-    if (!code) {
-      if (showAlert) {
-        window.alert("プレイヤーコードは3桁の数字と英字2文字で入力してください。例：123-AB");
-      }
-      return false;
-    }
-
+  function savePlayerCodeValue(code, writeSharePoint) {
     state.playerCode = code;
     Settings.savePlayerCode(code);
     text("playerCodeDisplay", code);
@@ -369,11 +360,45 @@
     return true;
   }
 
+  function openPlayerNameDialog(writeSharePoint) {
+    var current = state.playerCode || "";
+    var value = window.prompt("プレイヤーの名前を入力してください。\n形式：123-AB", current);
+    var match;
+    var code;
+
+    if (value === null) {
+      return false;
+    }
+
+    value = String(value).replace(/\s/g, "").toUpperCase();
+    match = value.match(/^(\d{1,3})-([A-Z]{2})$/);
+    if (!match) {
+      window.alert("3桁の数字と英字2文字を、123-ABの形式で入力してください。");
+      return false;
+    }
+
+    code = Settings.makePlayerCode(match[1], match[2]);
+    return savePlayerCodeValue(code, writeSharePoint);
+  }
+
+  function savePlayerFromInputs(showAlert, writeSharePoint) {
+    var code = Settings.makePlayerCode($("playerNumber").value, $("playerNick").value);
+
+    if (!code) {
+      if (showAlert) {
+        window.alert("プレイヤーの名前は入力ボタンから、123-ABの形式で入力してください。");
+      }
+      return false;
+    }
+
+    return savePlayerCodeValue(code, writeSharePoint);
+  }
+
   function ensurePlayer() {
     if (state.playerCode && /^\d{3}-[A-Z]{2}$/.test(state.playerCode)) {
       return true;
     }
-    return savePlayerFromInputs(true, false);
+    return openPlayerNameDialog(false);
   }
 
   function stopTimer() {
@@ -458,6 +483,27 @@
     text("normalCompleted", state.stats.completed);
   }
 
+  function setNormalDuration(seconds) {
+    var options = [10, 30, 60];
+    var i;
+    var button;
+
+    seconds = numberValue(seconds, 30);
+    if (options.indexOf(seconds) < 0) {
+      seconds = 30;
+    }
+    state.normalSeconds = seconds;
+
+    for (i = 0; i < options.length; i++) {
+      button = $("btnTime" + options[i]);
+      if (button) {
+        button.className = "duration-button" + (options[i] === seconds ? " selected" : "");
+        button.setAttribute("aria-pressed", options[i] === seconds ? "true" : "false");
+      }
+    }
+    text("normalDurationText", seconds + "秒スコアアタックを開始");
+  }
+
   function startNormal() {
     var rank;
     var pool;
@@ -492,15 +538,17 @@
     state.mode = "normal";
     state.active = false;
 
-    seconds = numberValue(state.config.NORMAL_SECONDS, 60);
-    if (seconds < 10) { seconds = 60; }
-    state.normalSeconds = seconds;
+    seconds = state.normalSeconds;
+    if (seconds !== 10 && seconds !== 30 && seconds !== 60) {
+      seconds = 30;
+      state.normalSeconds = seconds;
+    }
 
     text("normalTime", seconds.toFixed(1));
     updateNormalStats();
     nextNormalWord();
     showView("viewNormalGame");
-    setStatus("通常タイピング / 記録先はplayersのみ");
+    setStatus(seconds + "秒 通常タイピング / 記録先はplayersのみ");
 
     runCountdown("normalCountdown", function () {
       state.startMs = new Date().getTime();
@@ -639,6 +687,23 @@
     setStatus("標準設定を表示しました。「設定を保存」で確定します");
   }
 
+  function clearSavedData() {
+    if (!window.confirm("Cookieに保存したプレイヤー名・入力設定・端末識別子を初期化します。よろしいですか？")) {
+      return;
+    }
+
+    Settings.clearSavedData();
+    state.playerCode = "";
+    state.clientId = Settings.getClientId();
+    resetPlayerState();
+    state.romajiSettings = Settings.loadRomaji();
+    Settings.renderRomaji($("romajiSettings"), state.romajiSettings);
+    $("playerNumber").value = "";
+    $("playerNick").value = "";
+    text("playerCodeDisplay", "--- --");
+    setStatus("保存データを初期化しました");
+  }
+
   function showHome() {
     state.mode = "";
     state.active = false;
@@ -675,11 +740,14 @@
 
   function bindEvents() {
     $("btnToggleDiagnostics").onclick = toggleDiagnostics;
-    $("btnSavePlayer").onclick = function () { savePlayerFromInputs(true, true); };
+    $("btnSavePlayer").onclick = function () { openPlayerNameDialog(true); };
     $("btnRetryPlayers").onclick = function () { testPlayersRead(); };
+    $("btnTime10").onclick = function () { setNormalDuration(10); };
+    $("btnTime30").onclick = function () { setNormalDuration(30); };
+    $("btnTime60").onclick = function () { setNormalDuration(60); };
     $("btnNormal").onclick = startNormal;
     $("btnOfficial").onclick = function () {
-      window.alert("現在はplayersだけの接続試験中です。tournament / officialrecords はまだ接続しません。");
+      window.alert("公式タイピングは現在準備中です。通常タイピングをお楽しみください。");
     };
     $("btnSettings").onclick = openSettings;
 
@@ -690,6 +758,9 @@
     $("btnSaveSettings").onclick = saveSettings;
     $("btnResetSettings").onclick = resetSettings;
     $("btnSettingsBack").onclick = showHome;
+    $("btnClearSavedData").onclick = clearSavedData;
+
+    setNormalDuration(state.normalSeconds);
 
     document.onkeydown = handleKeyDown;
   }
@@ -728,6 +799,7 @@
 
   function initWithConfig(config) {
     state.config = config || {};
+    setNormalDuration(state.config.NORMAL_SECONDS);
     Settings.configure(state.config.COOKIE_DAYS || 365);
     SP.init(state.config.WEB_ROOT || "AUTO");
 

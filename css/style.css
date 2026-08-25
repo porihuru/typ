@@ -65,6 +65,10 @@ button {
   padding: 28px 14px 60px 14px;
 }
 
+#viewHome {
+  padding: 8px 14px 6px 14px;
+}
+
 .active-view {
   display: block;
 }
@@ -98,83 +102,130 @@ h2 {
   letter-spacing: 2px;
 }
 
+#viewHome .panel {
+  width: 960px;
+  padding: 18px;
+}
+
+.home-intro {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  min-height: 48px;
+  margin-bottom: 10px;
+}
+
+.home-intro h1 {
+  margin: 2px 0 0 0;
+  font-size: 25px;
+  line-height: 1.15;
+}
+
+.home-intro p {
+  margin: 0 0 2px 20px;
+  color: #9eafc4;
+  font-size: 13px;
+  text-align: right;
+}
+
+.eyebrow {
+  color: #67c6ff;
+  font-size: 10px;
+  font-weight: bold;
+  letter-spacing: 2px;
+}
+
+.home-dashboard {
+  display: flex;
+  width: 100%;
+  gap: 12px;
+  align-items: stretch;
+}
+
+.home-card {
+  flex: 1 1 0;
+  min-width: 0;
+  height: 232px;
+  padding: 15px;
+  background: #111923;
+  border: 1px solid #2d3d53;
+  border-radius: 8px;
+}
+
+.home-card-heading {
+  display: flex;
+  align-items: center;
+  min-height: 42px;
+  margin-bottom: 10px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid #2a3a4e;
+}
+
+.step-label {
+  display: inline-block;
+  width: 30px;
+  height: 30px;
+  margin-right: 10px;
+  border: 1px solid #3f5875;
+  border-radius: 50%;
+  color: #70c8ff;
+  font-size: 11px;
+  font-weight: bold;
+  line-height: 28px;
+  text-align: center;
+}
+
+.home-card-heading h2 {
+  margin: 0 0 2px 0;
+  color: #eef4fb;
+  font-size: 17px;
+  letter-spacing: 1px;
+}
+
+.home-card-heading p {
+  margin: 0;
+  color: #9eafc4;
+  font-size: 11px;
+}
+
+.game-start-section {
+  flex-grow: 1.08;
+  border-color: #356487;
+}
+
+.player-section {
+  flex-grow: 1.08;
+  border-color: #46546a;
+}
+
+.progress-section {
+  flex-grow: 0.84;
+}
+
 .diag-panel {
-  width: 660px;
-  max-width: 100%;
-  margin: 0 auto 22px auto;
-  padding: 16px;
+  width: 100%;
+  max-width: none;
+  margin: 10px 0 0 0;
+  padding: 0;
   background: #0d141d;
   border: 1px solid #324158;
   border-radius: 6px;
 }
 
-#viewHome .panel {
-  display: flex;
-  flex-direction: column;
-}
-
-#viewHome .diag-panel {
-  order: 10;
-}
-
-.home-sections {
-  width: 660px;
-  max-width: 100%;
-  margin: 0 auto 22px auto;
-  display: flex;
-  gap: 16px;
-  align-items: stretch;
-}
-
-.home-section {
-  flex: 1 1 0;
-  min-width: 0;
-  padding: 20px;
-  background: #111923;
-  border: 1px solid #2d3d53;
-  border-radius: 6px;
-}
-
-.home-section-heading {
-  margin-bottom: 16px;
-  padding-bottom: 12px;
-  border-bottom: 1px solid #2a3a4e;
-}
-
-.home-section-heading h2 {
-  margin-bottom: 5px;
-  color: #eef4fb;
-  font-size: 19px;
-  letter-spacing: 1px;
-}
-
-.home-section-heading p {
-  margin: 0;
-  color: #9eafc4;
-  font-size: 13px;
-}
-
-.game-start-section {
-  border-color: #356487;
-}
-
-.settings-home-section {
-  border-color: #46546a;
-}
-
 .diagnostics-toggle {
   width: 100%;
-  padding: 9px 12px;
-  border: 1px solid #526b89;
+  min-height: 32px;
+  padding: 6px 10px;
+  border: 0;
   border-radius: 4px;
-  background: #243349;
-  color: #dce8f5;
-  font-size: 12px;
+  background: #172331;
+  color: #9eb2c8;
+  font-size: 11px;
   text-align: left;
 }
 
 .diagnostics-content {
-  margin-top: 14px;
+  margin: 12px;
 }
 
 .diag-panel.collapsed .diagnostics-content {
@@ -246,36 +297,112 @@ h2 {
   text-align: center;
 }
 
-.settings-home-section .player-box {
+.player-section .player-box {
   width: 100%;
-  margin-bottom: 16px;
-  padding: 16px;
+  margin-bottom: 9px;
+  padding: 0;
   background: #0d151f;
+  border: 0;
 }
 
-.settings-home-section .player-box h3 {
-  margin: 0 0 12px 0;
-  color: #dbe8f5;
-  font-size: 16px;
+.player-code-label {
+  color: #70839a;
+  font-size: 9px;
+  letter-spacing: 1.5px;
 }
 
-.home-section .menu-buttons,
-.home-section .settings-link {
+.name-input-button {
+  display: block;
+  width: 100%;
+  margin: 8px 0 0 0;
+}
+
+.player-section .name-input-button,
+.player-section .settings-button {
+  width: 100%;
+  height: 34px;
+  min-height: 34px;
+  margin-left: 0;
+  margin-right: 0;
+}
+
+.home-card .menu-buttons,
+.home-card .settings-link {
   width: 100%;
 }
 
-.home-section .player-inputs {
+.duration-selector {
+  display: flex;
+  align-items: center;
+  height: 28px;
+  margin-bottom: 6px;
+  padding: 3px;
+  background: #0d151f;
+  border: 1px solid #273b52;
+  border-radius: 5px;
+}
+
+.duration-label {
+  flex: 1 1 auto;
+  padding-left: 7px;
+  color: #91a7bf;
+  font-size: 11px;
+}
+
+.duration-button {
+  min-width: 46px;
+  height: 22px;
+  margin-left: 4px;
+  padding: 2px 7px;
+  border: 1px solid #3a506c;
+  border-radius: 4px;
+  background: #1b2939;
+  color: #b9c9da;
+  font-size: 11px;
+}
+
+.duration-button.selected {
+  border-color: #4bb8ff;
+  background: #176da7;
+  color: #ffffff;
+  font-weight: bold;
+}
+
+.home-card .player-inputs {
   white-space: normal;
 }
 
-.home-section .main-button {
-  min-height: 68px;
-  padding: 10px 12px;
-  font-size: 18px;
+.home-card .main-button {
+  min-height: 62px;
+  margin: 0 0 8px 0;
+  padding: 9px 12px;
+  font-size: 17px;
 }
 
-.home-section .main-button span {
+.home-card .main-button span {
   font-size: 11px;
+}
+
+.home-card .main-button .button-title {
+  margin: 0;
+  color: #ffffff;
+  font-size: 17px;
+}
+
+.home-card .main-button .button-meta {
+  margin-top: 3px;
+}
+
+.game-start-section .home-card-heading {
+  min-height: 35px;
+  margin-bottom: 6px;
+  padding-bottom: 5px;
+}
+
+.game-start-section .main-button {
+  min-height: 48px;
+  margin-bottom: 4px;
+  padding: 5px 10px;
 }
 
 .player-inputs {
@@ -285,23 +412,23 @@ h2 {
 .code-number,
 .code-nick,
 .password-input {
-  height: 42px;
-  padding: 5px 10px;
+  height: 34px;
+  padding: 4px 8px;
   background: #0b1017;
   color: #ffffff;
   border: 1px solid #42546d;
   border-radius: 4px;
-  font-size: 20px;
+  font-size: 16px;
   text-align: center;
   text-transform: uppercase;
 }
 
 .code-number {
-  width: 82px;
+  width: 62px;
 }
 
 .code-nick {
-  width: 68px;
+  width: 54px;
 }
 
 .code-separator {
@@ -310,9 +437,9 @@ h2 {
 }
 
 .small-button {
-  height: 42px;
-  margin-left: 10px;
-  padding: 0 16px;
+  height: 34px;
+  margin-left: 6px;
+  padding: 0 12px;
   border: 1px solid #526b89;
   border-radius: 4px;
   background: #243349;
@@ -320,14 +447,14 @@ h2 {
 }
 
 .player-code {
-  margin-top: 14px;
-  font-size: 28px;
+  margin: 2px 0 8px 0;
+  font-size: 22px;
   font-weight: bold;
   letter-spacing: 3px;
 }
 
 .rank-name {
-  font-size: 24px;
+  font-size: 22px;
   font-weight: bold;
   margin-bottom: 6px;
 }
@@ -340,8 +467,8 @@ h2 {
 
 .progress {
   width: 100%;
-  height: 12px;
-  margin: 12px 0;
+  height: 9px;
+  margin: 10px 0;
   background: #0a0e14;
   border: 1px solid #293a50;
   overflow: hidden;
@@ -351,6 +478,20 @@ h2 {
   height: 100%;
   width: 0;
   background: #4bb8ff;
+}
+
+.progress-section .rank-box {
+  width: 100%;
+  margin: 2px 0 0 0;
+  padding: 13px;
+  background: #0d151f;
+}
+
+.settings-button {
+  min-height: 34px;
+  margin: 0;
+  padding: 5px 10px;
+  font-size: 12px;
 }
 
 .menu-buttons {
@@ -638,6 +779,36 @@ h2 {
   margin-top: 25px;
 }
 
+.reset-data-button {
+  border-color: #744b55;
+  color: #ffb2b2;
+}
+
+@media screen and (max-width: 760px) {
+  #viewHome {
+    padding: 10px 8px 30px 8px;
+  }
+
+  .home-intro {
+    display: block;
+  }
+
+  .home-intro p {
+    margin: 7px 0 0 0;
+    text-align: left;
+  }
+
+  .home-dashboard {
+    display: block;
+  }
+
+  .home-card {
+    height: auto;
+    margin-bottom: 14px;
+    padding: 16px 12px;
+  }
+}
+
 @media screen and (max-width: 600px) {
   .header {
     padding: 0 12px;
@@ -650,15 +821,6 @@ h2 {
   .panel,
   .game-panel {
     padding: 18px 12px;
-  }
-
-  .home-sections {
-    display: block;
-  }
-
-  .home-section {
-    margin-bottom: 14px;
-    padding: 16px 12px;
   }
 
   h1 {

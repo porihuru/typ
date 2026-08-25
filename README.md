@@ -48,6 +48,10 @@ typ/
 
 通常ゲームでは同じ表示コードを使うことを許容します。成長情報はCookieで生成した `ClientId` と組み合わせてSharePoint側で識別します。
 
+設定画面の「保存データの初期化」では、プレイヤー名・ローマ字入力設定・端末識別子のCookieを削除します。SharePointのplayersリストに保存済みの記録は削除しません。
+
+プレイヤー名はホーム画面の「名前の入力」ボタンからダイアログで登録・変更します。入力形式は `123-AB` です。
+
 公式大会では `tournament` リストに参加者コードを1件だけ登録してください。同一大会・同一PlayerCodeが複数ある場合は入場を拒否します。
 
 ## 問題CSV
@@ -64,7 +68,8 @@ ID,漢字,ひらがな
 
 ## 通常ゲーム
 
-- 60秒（`config/config.txt` の `NORMAL_SECONDS` で変更可）
+- ホーム画面で10秒・30秒・60秒から競技時間を選択（初期値は30秒）
+- `config/config.txt` の `NORMAL_SECONDS` は初期選択値（10 / 30 / 60）として使用
 - 正打1キー = 10点
 - 1問完成 = 100点
 - ミスは直接減点しない
@@ -99,7 +104,7 @@ NORMAL_RECORD_LIST=normalrecords
 OFFICIAL_RECORD_LIST=officialrecords
 TOURNAMENT_LIST=tournament
 COUNTER_LIST=accesscounter
-NORMAL_SECONDS=60
+NORMAL_SECONDS=30
 COOKIE_DAYS=365
 TOURNAMENT_ID=official01
 OFFICIAL_WORDS_VERSION=1
