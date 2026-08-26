@@ -1,0 +1,148 @@
+/* home.css
+ * トップ画面専用レイアウト
+ * 左: ゲーム / プレイヤー
+ * 右: SharePoint 接続テスト
+ * IE11 / Edge 95 IE mode compatible
+ */
+
+#viewHome .panel {
+  width: 1180px;
+  max-width: 100%;
+  padding: 20px;
+}
+
+.home-title {
+  margin: 0 0 16px 0;
+  font-size: 28px;
+}
+
+.home-two-column {
+  width: 100%;
+}
+
+.home-two-column:after {
+  display: block;
+  clear: both;
+  content: "";
+}
+
+.home-primary,
+.home-diagnostics {
+  float: left;
+  width: 48.5%;
+}
+
+.home-diagnostics {
+  margin-left: 3%;
+}
+
+.home-main-card,
+.home-test-card {
+  min-height: 610px;
+  padding: 18px;
+  background: #111923;
+  border: 1px solid #2d3d53;
+  border-radius: 8px;
+}
+
+.home-main-card {
+  border-color: #356487;
+}
+
+.home-test-card {
+  border-color: #46546a;
+}
+
+.home-card-title {
+  margin: 0 0 14px 0;
+  padding: 0 0 10px 0;
+  border-bottom: 1px solid #2a3a4e;
+  color: #eef4fb;
+  font-size: 17px;
+  letter-spacing: 1px;
+}
+
+.home-card-subtitle {
+  display: block;
+  margin-top: 4px;
+  color: #8fa4be;
+  font-size: 11px;
+  font-weight: normal;
+  letter-spacing: 0;
+}
+
+.home-primary .player-box,
+.home-primary .rank-box,
+.home-primary .menu-buttons {
+  width: 100%;
+  max-width: 100%;
+}
+
+.home-primary .player-box,
+.home-primary .rank-box {
+  margin: 0 0 12px 0;
+}
+
+.home-primary .menu-buttons {
+  margin: 0;
+}
+
+.home-primary .main-button {
+  min-height: 62px;
+  margin: 8px 0;
+}
+
+.home-primary .sub-button {
+  margin: 8px 0 0 0;
+}
+
+.home-diagnostics .diag-panel {
+  width: 100%;
+  max-width: 100%;
+  margin: 0;
+  padding: 0;
+  background: transparent;
+  border: 0;
+}
+
+.home-diagnostics .diag-row {
+  margin: 6px 0;
+  padding: 8px 7px;
+}
+
+.home-diagnostics .diag-name {
+  width: 118px;
+}
+
+.home-diagnostics .diag-status {
+  width: 58px;
+}
+
+.home-diagnostics .diag-detail {
+  font-size: 11px;
+}
+
+.home-diagnostics #btnRetryAll {
+  width: 100%;
+  max-width: 100%;
+  min-height: 44px;
+  margin: 12px 0 0 0;
+}
+
+@media screen and (max-width: 900px) {
+  .home-primary,
+  .home-diagnostics {
+    float: none;
+    width: 100%;
+    margin-left: 0;
+  }
+
+  .home-diagnostics {
+    margin-top: 14px;
+  }
+
+  .home-main-card,
+  .home-test-card {
+    min-height: 0;
+  }
+}
