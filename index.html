@@ -5,7 +5,8 @@
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>タイピングゲーム</title>
-  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/style.css?v=20260826b">
+  <link rel="stylesheet" href="css/home.css?v=20260826b">
 </head>
 <body>
   <div id="app">
@@ -26,91 +27,107 @@
 
     <div id="viewHome" class="view">
       <div class="panel">
-        <h1>タイピングゲーム</h1>
+        <h1 class="home-title">タイピングゲーム</h1>
 
-        <div class="diag-panel">
-          <h2>接続状況 / SHAREPOINT</h2>
+        <div class="home-two-column">
+          <div class="home-primary">
+            <div class="home-main-card">
+              <h2 class="home-card-title">PLAY
+                <span class="home-card-subtitle">プレイヤー設定とゲーム開始</span>
+              </h2>
 
-          <div id="diag-config" class="diag-row diag-wait">
-            <span class="diag-name">CONFIG</span>
-            <strong id="diag-config-status" class="diag-status">確認中</strong>
-            <span id="diag-config-detail" class="diag-detail">config/config.txt</span>
+              <div class="player-box">
+                <h2>PLAYER</h2>
+                <div class="player-inputs">
+                  <input id="playerNumber" class="code-number" type="text" maxlength="3" autocomplete="off" placeholder="123">
+                  <span class="code-separator">-</span>
+                  <input id="playerNick" class="code-nick" type="text" maxlength="2" autocomplete="off" placeholder="AB">
+                  <button id="btnSavePlayer" type="button" class="small-button">保存</button>
+                </div>
+                <div id="playerCodeDisplay" class="player-code">--- --</div>
+              </div>
+
+              <div class="rank-box">
+                <div class="rank-name" id="homeRank">ビギナー</div>
+                <div class="exp-text"><span id="homeExp">0</span> EXP</div>
+                <div class="progress"><div id="homeExpBar" class="progress-inner"></div></div>
+                <div id="homeBest" class="sub-text">BEST SCORE 0</div>
+                <div class="sub-text">PLAY <span id="homePlays">0</span></div>
+              </div>
+
+              <div class="menu-buttons">
+                <button id="btnNormal" type="button" class="main-button">通常タイピング<br><span id="normalModeLabel">10秒スコアアタック</span></button>
+                <button id="btnOfficial" type="button" class="main-button official-button">公式タイピング<br><span>固定単語スプリント / 参加者限定</span></button>
+                <button id="btnSettings" type="button" class="sub-button">ローマ字入力設定</button>
+              </div>
+            </div>
           </div>
 
-          <div id="diag-csvnormal" class="diag-row diag-wait">
-            <span class="diag-name">CSV 通常</span>
-            <strong id="diag-csvnormal-status" class="diag-status">確認中</strong>
-            <span id="diag-csvnormal-detail" class="diag-detail">csv/typing.csv</span>
+          <div class="home-diagnostics">
+            <div class="home-test-card">
+              <h2 class="home-card-title">接続テスト
+                <span class="home-card-subtitle">CONFIG / CSV / SharePoint 5リスト</span>
+              </h2>
+
+              <div class="diag-panel">
+                <div id="diag-config" class="diag-row diag-wait">
+                  <span class="diag-name">CONFIG</span>
+                  <strong id="diag-config-status" class="diag-status">確認中</strong>
+                  <span id="diag-config-detail" class="diag-detail">config/config.txt</span>
+                </div>
+
+                <div id="diag-csvnormal" class="diag-row diag-wait">
+                  <span class="diag-name">CSV 通常</span>
+                  <strong id="diag-csvnormal-status" class="diag-status">確認中</strong>
+                  <span id="diag-csvnormal-detail" class="diag-detail">csv/typing.csv</span>
+                </div>
+
+                <div id="diag-csvofficial" class="diag-row diag-wait">
+                  <span class="diag-name">CSV 公式</span>
+                  <strong id="diag-csvofficial-status" class="diag-status">確認中</strong>
+                  <span id="diag-csvofficial-detail" class="diag-detail">csv/official.csv</span>
+                </div>
+
+                <div id="diag-sp" class="diag-row diag-wait">
+                  <span class="diag-name">SHAREPOINT</span>
+                  <strong id="diag-sp-status" class="diag-status">未確認</strong>
+                  <span id="diag-sp-detail" class="diag-detail">SharePoint REST API</span>
+                </div>
+
+                <div id="diag-players" class="diag-row diag-wait">
+                  <span class="diag-name">players</span>
+                  <strong id="diag-players-status" class="diag-status">未確認</strong>
+                  <span id="diag-players-detail" class="diag-detail">プレイヤー情報</span>
+                </div>
+
+                <div id="diag-normalrecords" class="diag-row diag-wait">
+                  <span class="diag-name">normalrecords</span>
+                  <strong id="diag-normalrecords-status" class="diag-status">未確認</strong>
+                  <span id="diag-normalrecords-detail" class="diag-detail">通常記録</span>
+                </div>
+
+                <div id="diag-officialrecords" class="diag-row diag-wait">
+                  <span class="diag-name">officialrecords</span>
+                  <strong id="diag-officialrecords-status" class="diag-status">未確認</strong>
+                  <span id="diag-officialrecords-detail" class="diag-detail">公式記録</span>
+                </div>
+
+                <div id="diag-tournament" class="diag-row diag-wait">
+                  <span class="diag-name">tournament</span>
+                  <strong id="diag-tournament-status" class="diag-status">未確認</strong>
+                  <span id="diag-tournament-detail" class="diag-detail">大会設定・参加者</span>
+                </div>
+
+                <div id="diag-counter" class="diag-row diag-wait">
+                  <span class="diag-name">accesscounter</span>
+                  <strong id="diag-counter-status" class="diag-status">未確認</strong>
+                  <span id="diag-counter-detail" class="diag-detail">アクセスカウンター</span>
+                </div>
+
+                <button id="btnRetryAll" type="button" class="sub-button compact">全リスト再接続テスト</button>
+              </div>
+            </div>
           </div>
-
-          <div id="diag-csvofficial" class="diag-row diag-wait">
-            <span class="diag-name">CSV 公式</span>
-            <strong id="diag-csvofficial-status" class="diag-status">確認中</strong>
-            <span id="diag-csvofficial-detail" class="diag-detail">csv/official.csv</span>
-          </div>
-
-          <div id="diag-sp" class="diag-row diag-wait">
-            <span class="diag-name">SHAREPOINT</span>
-            <strong id="diag-sp-status" class="diag-status">未確認</strong>
-            <span id="diag-sp-detail" class="diag-detail">SharePoint REST API</span>
-          </div>
-
-          <div id="diag-players" class="diag-row diag-wait">
-            <span class="diag-name">players</span>
-            <strong id="diag-players-status" class="diag-status">未確認</strong>
-            <span id="diag-players-detail" class="diag-detail">プレイヤー情報</span>
-          </div>
-
-          <div id="diag-normalrecords" class="diag-row diag-wait">
-            <span class="diag-name">normalrecords</span>
-            <strong id="diag-normalrecords-status" class="diag-status">未確認</strong>
-            <span id="diag-normalrecords-detail" class="diag-detail">通常記録</span>
-          </div>
-
-          <div id="diag-officialrecords" class="diag-row diag-wait">
-            <span class="diag-name">officialrecords</span>
-            <strong id="diag-officialrecords-status" class="diag-status">未確認</strong>
-            <span id="diag-officialrecords-detail" class="diag-detail">公式記録</span>
-          </div>
-
-          <div id="diag-tournament" class="diag-row diag-wait">
-            <span class="diag-name">tournament</span>
-            <strong id="diag-tournament-status" class="diag-status">未確認</strong>
-            <span id="diag-tournament-detail" class="diag-detail">大会設定・参加者</span>
-          </div>
-
-          <div id="diag-counter" class="diag-row diag-wait">
-            <span class="diag-name">accesscounter</span>
-            <strong id="diag-counter-status" class="diag-status">未確認</strong>
-            <span id="diag-counter-detail" class="diag-detail">アクセスカウンター</span>
-          </div>
-
-          <button id="btnRetryAll" type="button" class="sub-button compact">全リスト再接続テスト</button>
-        </div>
-
-        <div class="player-box">
-          <h2>PLAYER</h2>
-          <div class="player-inputs">
-            <input id="playerNumber" class="code-number" type="text" maxlength="3" autocomplete="off" placeholder="123">
-            <span class="code-separator">-</span>
-            <input id="playerNick" class="code-nick" type="text" maxlength="2" autocomplete="off" placeholder="AB">
-            <button id="btnSavePlayer" type="button" class="small-button">保存</button>
-          </div>
-          <div id="playerCodeDisplay" class="player-code">--- --</div>
-        </div>
-
-        <div class="rank-box">
-          <div class="rank-name" id="homeRank">ビギナー</div>
-          <div class="exp-text"><span id="homeExp">0</span> EXP</div>
-          <div class="progress"><div id="homeExpBar" class="progress-inner"></div></div>
-          <div id="homeBest" class="sub-text">BEST SCORE 0</div>
-          <div class="sub-text">PLAY <span id="homePlays">0</span></div>
-        </div>
-
-        <div class="menu-buttons">
-          <button id="btnNormal" type="button" class="main-button">通常タイピング<br><span id="normalModeLabel">10秒スコアアタック</span></button>
-          <button id="btnOfficial" type="button" class="main-button official-button">公式タイピング<br><span>固定単語スプリント / 参加者限定</span></button>
-          <button id="btnSettings" type="button" class="sub-button">ローマ字入力設定</button>
         </div>
       </div>
     </div>
@@ -242,11 +259,11 @@
     </div>
   </div>
 
-  <script src="js/csv.js"></script>
-  <script src="js/romaji.js"></script>
-  <script src="js/settings.js"></script>
-  <script src="js/typing.js"></script>
-  <script src="js/sp.js"></script>
-  <script src="js/app.js"></script>
+  <script src="js/csv.js?v=20260826b"></script>
+  <script src="js/romaji.js?v=20260826b"></script>
+  <script src="js/settings.js?v=20260826b"></script>
+  <script src="js/typing.js?v=20260826b"></script>
+  <script src="js/sp.js?v=20260826b"></script>
+  <script src="js/app.js?v=20260826b"></script>
 </body>
 </html>
