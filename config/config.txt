@@ -1,6 +1,6 @@
 # SharePoint / typing app configuration
-# players + accesscounter 接続試験
-TEST_MODE=players_accesscounter
+# 5リスト運用
+TEST_MODE=all
 
 # SharePoint Web root
 # players リストの場所:
@@ -17,10 +17,10 @@ OFFICIAL_RECORD_LIST=officialrecords
 TOURNAMENT_LIST=tournament
 COUNTER_LIST=accesscounter
 
-# 現在の試験対象は players と accesscounter。
-# normalrecords / officialrecords / tournament にはまだREST通信しません。
-NORMAL_SECONDS=30
+# 通常タイピング時間
+NORMAL_SECONDS=10
 COOKIE_DAYS=365
 
+# 公式大会
 TOURNAMENT_ID=official01
 OFFICIAL_WORDS_VERSION=1
