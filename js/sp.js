@@ -2,15 +2,11 @@
 // SharePoint REST API 共通処理
 // 接続・読込・追加・修正・削除
 // SharePointカスタム列は英小文字で統一
+// 表示名からInternalNameを自動解決する
 // ES5 / XMLHttpRequest only
 (function (global) {
   "use strict";
 
-  /*
-   * app.js 内の従来名とSharePoint側の小文字内部名を対応させる。
-   * SharePoint標準の Id / Title はシステム列のため例外。
-   * Title に渡された値は、業務用の key と標準 Title の両方へ保存する。
-   */
   var FIELD_MAP = {
     "Title": "key",
     "ClientId": "clientid",
@@ -37,14 +33,27 @@
     "Count": "count"
   };
 
+  /* 現在のSharePoint側の表記ゆれも吸収する */
+  var FIELD_ALIASES = {
+    "tournamentid": ["tournamentid", "tournamentyid"],
+    "timems": ["timems", "times"]
+  };
+
   var SP = {
     webRoot: "",
     api: "",
     digest: "",
     digestExpire: 0,
     entityTypes: {},
+    fieldSchemas: {},
     fieldMap: FIELD_MAP
   };
+
+  function trimLower(value) {
+    return String(value === null || value === undefined ? "" : value)
+      .replace(/^\s+|\s+$/g, "")
+      .toLowerCase();
+  }
 
   function detectWebRoot() {
     var path = window.location.pathname;
@@ -60,82 +69,6 @@
     return last > 0 ? path.substring(0, last) : "";
   }
 
-  function mapFieldName(name) {
-    var s = String(name || "");
-
-    if (s === "Id" || s === "ID") {
-      return "Id";
-    }
-
-    if (FIELD_MAP.hasOwnProperty(s)) {
-      return FIELD_MAP[s];
-    }
-
-    return s.toLowerCase();
-  }
-
-  function mapColumns(columns) {
-    var result = [];
-    var used = {};
-    var i;
-    var name;
-
-    for (i = 0; i < columns.length; i++) {
-      name = mapFieldName(columns[i]);
-      if (!used[name]) {
-        used[name] = true;
-        result.push(name);
-      }
-    }
-
-    return result;
-  }
-
-  function normalizeItem(item) {
-    var legacy;
-    var lower;
-
-    if (!item) {
-      return item;
-    }
-
-    for (legacy in FIELD_MAP) {
-      if (FIELD_MAP.hasOwnProperty(legacy)) {
-        lower = FIELD_MAP[legacy];
-        if (typeof item[legacy] === "undefined" && typeof item[lower] !== "undefined") {
-          item[legacy] = item[lower];
-        }
-      }
-    }
-
-    return item;
-  }
-
-  function mapData(data, includeSystemTitle) {
-    var result = {};
-    var key;
-    var mapped;
-
-    for (key in data) {
-      if (data.hasOwnProperty(key)) {
-        mapped = mapFieldName(key);
-        result[mapped] = data[key];
-
-        /* SharePoint標準 Title が必須設定でも保存できるようにする。 */
-        if (includeSystemTitle && key === "Title") {
-          result.Title = data[key];
-        }
-      }
-    }
-
-    return result;
-  }
-
-  /*
-   * webRoot:
-   *   /sites/typing のようにconfig.txtから指定
-   *   AUTO または空文字なら現在URLから自動判定
-   */
   SP.init = function (webRoot) {
     var root = String(webRoot || "").replace(/^\s+|\s+$/g, "");
 
@@ -152,6 +85,7 @@
     SP.digest = "";
     SP.digestExpire = 0;
     SP.entityTypes = {};
+    SP.fieldSchemas = {};
 
     return SP.webRoot;
   };
@@ -258,16 +192,17 @@
     );
   }
 
-  /* listTitle, columns, success(items), error(xhr) */
-  SP.load = function (listTitle, columns, success, error) {
-    var title = escapeListTitle(listTitle);
-    var selectColumns;
-    var url = SP.api + "/web/lists/getbytitle('" + title + "')/items?$top=5000";
+  function loadFieldSchema(listTitle, success, error) {
+    var title;
+    var url;
 
-    if (columns && columns.length) {
-      selectColumns = mapColumns(columns);
-      url += "&$select=" + encodeURIComponent(selectColumns.join(","));
+    if (SP.fieldSchemas[listTitle]) {
+      success(SP.fieldSchemas[listTitle]);
+      return;
     }
+
+    title = escapeListTitle(listTitle);
+    url = SP.api + "/web/lists/getbytitle('" + title + "')/fields?$select=Title,InternalName,TypeAsString";
 
     xhr(
       "GET",
@@ -276,18 +211,28 @@
       null,
       function (req) {
         var data;
-        var items;
+        var fields;
+        var schema = { byName: {}, fields: [] };
         var i;
+        var info;
 
         try {
           data = JSON.parse(req.responseText);
-          items = data.d.results || [];
+          fields = data.d.results || [];
 
-          for (i = 0; i < items.length; i++) {
-            normalizeItem(items[i]);
+          for (i = 0; i < fields.length; i++) {
+            info = {
+              title: fields[i].Title,
+              internalName: fields[i].InternalName,
+              type: fields[i].TypeAsString || ""
+            };
+            schema.fields.push(info);
+            schema.byName[trimLower(info.title)] = info;
+            schema.byName[trimLower(info.internalName)] = info;
           }
 
-          success(items);
+          SP.fieldSchemas[listTitle] = schema;
+          success(schema);
         } catch (e) {
           if (error) {
             error(req);
@@ -296,85 +241,280 @@
       },
       error
     );
+  }
+
+  function preferredName(logicalName) {
+    var s = String(logicalName || "");
+    if (s === "Id" || s === "ID") {
+      return "Id";
+    }
+    if (FIELD_MAP.hasOwnProperty(s)) {
+      return FIELD_MAP[s];
+    }
+    return s.toLowerCase();
+  }
+
+  function resolveFieldInfo(logicalName, schema) {
+    var preferred = preferredName(logicalName);
+    var aliases;
+    var i;
+    var info;
+
+    if (preferred === "Id") {
+      return { title: "ID", internalName: "Id", type: "Counter" };
+    }
+
+    info = schema.byName[trimLower(preferred)];
+    if (info) {
+      return info;
+    }
+
+    aliases = FIELD_ALIASES[trimLower(preferred)] || [];
+    for (i = 0; i < aliases.length; i++) {
+      info = schema.byName[trimLower(aliases[i])];
+      if (info) {
+        return info;
+      }
+    }
+
+    return { title: preferred, internalName: preferred, type: "" };
+  }
+
+  function mapColumns(columns, schema) {
+    var result = [];
+    var used = {};
+    var i;
+    var info;
+    var name;
+
+    for (i = 0; i < columns.length; i++) {
+      info = resolveFieldInfo(columns[i], schema);
+      name = info.internalName;
+      if (!used[name]) {
+        used[name] = true;
+        result.push(name);
+      }
+    }
+
+    return result;
+  }
+
+  function normalizeItem(item, schema) {
+    var logical;
+    var info;
+
+    if (!item) {
+      return item;
+    }
+
+    for (logical in FIELD_MAP) {
+      if (FIELD_MAP.hasOwnProperty(logical)) {
+        info = resolveFieldInfo(logical, schema);
+        if (typeof item[logical] === "undefined" && typeof item[info.internalName] !== "undefined") {
+          item[logical] = item[info.internalName];
+        }
+      }
+    }
+
+    if (typeof item.Id === "undefined" && typeof item.ID !== "undefined") {
+      item.Id = item.ID;
+    }
+
+    return item;
+  }
+
+  function coerceValue(value, info, logicalName) {
+    var type = trimLower(info.type);
+    var n;
+    var d;
+
+    if (value === null || value === undefined) {
+      return value;
+    }
+
+    if (type === "text" || type === "note" || type === "choice") {
+      return String(value);
+    }
+
+    if (type === "boolean") {
+      if (value === true || value === false) {
+        return value;
+      }
+      return trimLower(value) === "true" || String(value) === "1" || trimLower(value) === "yes";
+    }
+
+    if (type === "number" || type === "currency" || type === "integer" || type === "counter") {
+      if (typeof value === "number") {
+        return value;
+      }
+
+      n = parseFloat(value);
+      if (!isNaN(n)) {
+        return n;
+      }
+
+      if (String(logicalName) === "PlayDate") {
+        d = new Date(value);
+        if (!isNaN(d.getTime())) {
+          return d.getTime();
+        }
+      }
+    }
+
+    if (type === "datetime") {
+      if (typeof value === "number") {
+        d = new Date(value);
+        if (d.toISOString) {
+          return d.toISOString();
+        }
+      }
+      return value;
+    }
+
+    return value;
+  }
+
+  function mapData(data, includeSystemTitle, schema) {
+    var result = {};
+    var key;
+    var info;
+
+    for (key in data) {
+      if (data.hasOwnProperty(key)) {
+        info = resolveFieldInfo(key, schema);
+        result[info.internalName] = coerceValue(data[key], info, key);
+
+        if (includeSystemTitle && key === "Title") {
+          result.Title = String(data[key]);
+        }
+      }
+    }
+
+    return result;
+  }
+
+  SP.load = function (listTitle, columns, success, error) {
+    loadFieldSchema(listTitle, function (schema) {
+      var title = escapeListTitle(listTitle);
+      var selectColumns;
+      var url = SP.api + "/web/lists/getbytitle('" + title + "')/items?$top=5000";
+
+      if (columns && columns.length) {
+        selectColumns = mapColumns(columns, schema);
+        url += "&$select=" + encodeURIComponent(selectColumns.join(","));
+      }
+
+      xhr(
+        "GET",
+        url,
+        { "Accept": "application/json;odata=verbose" },
+        null,
+        function (req) {
+          var data;
+          var items;
+          var i;
+
+          try {
+            data = JSON.parse(req.responseText);
+            items = data.d.results || [];
+
+            for (i = 0; i < items.length; i++) {
+              normalizeItem(items[i], schema);
+            }
+
+            success(items);
+          } catch (e) {
+            if (error) {
+              error(req);
+            }
+          }
+        },
+        error
+      );
+    }, error);
   };
 
   SP.add = function (listTitle, data, success, error) {
-    getEntityType(listTitle, function (entityType) {
-      getDigest(function (digest) {
-        var title = escapeListTitle(listTitle);
-        var mapped = mapData(data, true);
-        var body = { "__metadata": { "type": entityType } };
-        var key;
+    loadFieldSchema(listTitle, function (schema) {
+      getEntityType(listTitle, function (entityType) {
+        getDigest(function (digest) {
+          var title = escapeListTitle(listTitle);
+          var mapped = mapData(data, true, schema);
+          var body = { "__metadata": { "type": entityType } };
+          var key;
 
-        for (key in mapped) {
-          if (mapped.hasOwnProperty(key)) {
-            body[key] = mapped[key];
+          for (key in mapped) {
+            if (mapped.hasOwnProperty(key)) {
+              body[key] = mapped[key];
+            }
           }
-        }
 
-        xhr(
-          "POST",
-          SP.api + "/web/lists/getbytitle('" + title + "')/items",
-          {
-            "Accept": "application/json;odata=verbose",
-            "Content-Type": "application/json;odata=verbose",
-            "X-RequestDigest": digest
-          },
-          JSON.stringify(body),
-          function (req) {
-            var result = null;
-            if (req.responseText) {
-              try {
-                result = JSON.parse(req.responseText);
-                if (result && result.d) {
-                  normalizeItem(result.d);
+          xhr(
+            "POST",
+            SP.api + "/web/lists/getbytitle('" + title + "')/items",
+            {
+              "Accept": "application/json;odata=verbose",
+              "Content-Type": "application/json;odata=verbose",
+              "X-RequestDigest": digest
+            },
+            JSON.stringify(body),
+            function (req) {
+              var result = null;
+              if (req.responseText) {
+                try {
+                  result = JSON.parse(req.responseText);
+                  if (result && result.d) {
+                    normalizeItem(result.d, schema);
+                  }
+                } catch (e) {
+                  result = null;
                 }
-              } catch (e) {
-                result = null;
               }
-            }
-            if (success) {
-              success(result);
-            }
-          },
-          error
-        );
+              if (success) {
+                success(result);
+              }
+            },
+            error
+          );
+        }, error);
       }, error);
     }, error);
   };
 
   SP.update = function (listTitle, itemId, data, success, error) {
-    getEntityType(listTitle, function (entityType) {
-      getDigest(function (digest) {
-        var title = escapeListTitle(listTitle);
-        var mapped = mapData(data, true);
-        var body = { "__metadata": { "type": entityType } };
-        var key;
+    loadFieldSchema(listTitle, function (schema) {
+      getEntityType(listTitle, function (entityType) {
+        getDigest(function (digest) {
+          var title = escapeListTitle(listTitle);
+          var mapped = mapData(data, true, schema);
+          var body = { "__metadata": { "type": entityType } };
+          var key;
 
-        for (key in mapped) {
-          if (mapped.hasOwnProperty(key)) {
-            body[key] = mapped[key];
-          }
-        }
-
-        xhr(
-          "POST",
-          SP.api + "/web/lists/getbytitle('" + title + "')/items(" + itemId + ")",
-          {
-            "Accept": "application/json;odata=verbose",
-            "Content-Type": "application/json;odata=verbose",
-            "X-RequestDigest": digest,
-            "X-HTTP-Method": "MERGE",
-            "IF-MATCH": "*"
-          },
-          JSON.stringify(body),
-          function () {
-            if (success) {
-              success();
+          for (key in mapped) {
+            if (mapped.hasOwnProperty(key)) {
+              body[key] = mapped[key];
             }
-          },
-          error
-        );
+          }
+
+          xhr(
+            "POST",
+            SP.api + "/web/lists/getbytitle('" + title + "')/items(" + itemId + ")",
+            {
+              "Accept": "application/json;odata=verbose",
+              "Content-Type": "application/json;odata=verbose",
+              "X-RequestDigest": digest,
+              "X-HTTP-Method": "MERGE",
+              "IF-MATCH": "*"
+            },
+            JSON.stringify(body),
+            function () {
+              if (success) {
+                success();
+              }
+            },
+            error
+          );
+        }, error);
       }, error);
     }, error);
   };
