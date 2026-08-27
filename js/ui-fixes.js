@@ -1,5 +1,5 @@
 // ui-fixes.js
-// ランキング時間切替 + 本人記録互換 + タイピング中Backspaceのブラウザ戻り防止
+// ランキング時間切替 + 本人記録互換 + SharePoint接続表示 + タイピング中Backspaceのブラウザ戻り防止
 // ES5 only: IE11 / Edge 95 IE mode compatible
 (function () {
   "use strict";
@@ -63,6 +63,16 @@
       if (window.Settings && Settings.getClientId) { clientId = String(Settings.getClientId() || ""); }
     } catch (e) {}
     return { name: name, clientId: clientId };
+  }
+
+  function markSharePointConnected() {
+    var status = $("statusBar");
+    var current;
+    if (!status) { return; }
+    current = status.innerText || status.textContent || "";
+    if (current.indexOf("接続中") >= 0 || (current.indexOf("SharePoint") >= 0 && current.indexOf("接続") >= 0)) {
+      status.innerText = "接続完了";
+    }
   }
 
   function betterPlayerRow(candidate, current) {
@@ -147,6 +157,8 @@
       originalLoad.call(SP, listName, columns, function (items) {
         var info = currentIdentityInfo();
         var fixed = items || [];
+
+        markSharePointConnected();
 
         if (hasColumn(columns, "EXP") && hasColumn(columns, "Plays") && hasColumn(columns, "BestScore")) {
           fixed = normalizeCurrentPlayerRows(fixed, info);
