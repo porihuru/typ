@@ -23,9 +23,11 @@
     var style;
     var css = "" +
       ".ranking-duration-switch{margin:8px 0 10px 0;padding:6px;border:1px solid #2b3d52;border-radius:5px;background:#0e1721;white-space:nowrap;}" +
+      ".ranking-duration-switch.disabled{opacity:.48;}" +
       ".ranking-duration-label{display:inline-block;width:54px;color:#9fb1c4;font-size:10px;font-weight:bold;vertical-align:middle;}" +
       ".ranking-duration-button{display:inline-block;width:27%;height:28px;margin:0 1% 0 0;padding:0;border:1px solid #3b4d63;border-radius:4px;background:#172433;color:#b8c8d9;font-size:11px;font-weight:bold;cursor:pointer;vertical-align:middle;}" +
-      ".ranking-duration-button.selected{border-color:#61bce6;background:#17415a;color:#e8f8ff;}";
+      ".ranking-duration-button.selected{border-color:#61bce6;background:#17415a;color:#e8f8ff;}" +
+      ".ranking-duration-button:disabled{cursor:default;color:#718092;background:#111923;border-color:#283747;}";
 
     if ($("rankingDurationStyle")) { return; }
     style = document.createElement("style");
@@ -34,6 +36,19 @@
     if (style.styleSheet) { style.styleSheet.cssText = css; }
     else { style.appendChild(document.createTextNode(css)); }
     document.getElementsByTagName("head")[0].appendChild(style);
+  }
+
+  function renameTypingGame() {
+    var headings = document.getElementsByTagName("h1");
+    var i;
+    var value;
+    document.title = "タイピング練習";
+    for (i = 0; i < headings.length; i++) {
+      value = headings[i].innerText || headings[i].textContent || "";
+      if (value === "タイピングゲーム") {
+        headings[i].innerText = "タイピング練習";
+      }
+    }
   }
 
   function findLeftDurationButton(seconds) {
@@ -61,25 +76,45 @@
     return 10;
   }
 
+  function scoreTabIsActive() {
+    return hasClass($("rankTabScore"), "selected");
+  }
+
   function syncRankingDurationButtons() {
     var box = $("rankingDurationSwitch");
     var buttons;
     var current;
+    var active;
     var i;
     var seconds;
     if (!box) { return; }
+
     current = selectedSeconds();
+    active = scoreTabIsActive();
+    box.className = active ? "ranking-duration-switch" : "ranking-duration-switch disabled";
     buttons = box.getElementsByTagName("button");
+
     for (i = 0; i < buttons.length; i++) {
       seconds = parseInt(buttons[i].getAttribute("data-seconds"), 10);
-      buttons[i].className = seconds === current ? "ranking-duration-button selected" : "ranking-duration-button";
+      buttons[i].disabled = !active;
+      if (active && seconds === current) {
+        buttons[i].className = "ranking-duration-button selected";
+      } else {
+        buttons[i].className = "ranking-duration-button";
+      }
     }
   }
 
   function rankingDurationClick(e) {
-    var button = e ? (e.currentTarget || e.srcElement) : null;
-    var seconds = button ? parseInt(button.getAttribute("data-seconds"), 10) : 10;
-    var source = findLeftDurationButton(seconds);
+    var button;
+    var seconds;
+    var source;
+
+    if (!scoreTabIsActive()) { return; }
+
+    button = e ? (e.currentTarget || e.srcElement) : null;
+    seconds = button ? parseInt(button.getAttribute("data-seconds"), 10) : 10;
+    source = findLeftDurationButton(seconds);
 
     if (source) {
       if (source.click) { source.click(); }
@@ -138,6 +173,21 @@
     selector.__rankingSyncBound = true;
   }
 
+  function bindRankingTabSync() {
+    var ids = ["rankTabScore", "rankTabExp", "rankTabPlay", "rankTabOfficial"];
+    var i;
+    var tab;
+    for (i = 0; i < ids.length; i++) {
+      tab = $(ids[i]);
+      if (!tab || tab.__durationActiveBound) { continue; }
+      on(tab, "click", function () {
+        window.setTimeout(syncRankingDurationButtons, 20);
+        window.setTimeout(syncRankingDurationButtons, 150);
+      }, false);
+      tab.__durationActiveBound = true;
+    }
+  }
+
   function gameIsActive() {
     return hasClass($("viewNormalGame"), "active-view") || hasClass($("viewOfficialGame"), "active-view");
   }
@@ -158,7 +208,9 @@
 
   function setup(attempt) {
     injectStyles();
+    renameTypingGame();
     bindLeftDurationSync();
+    bindRankingTabSync();
     createRankingDurationSwitch();
     syncRankingDurationButtons();
 
