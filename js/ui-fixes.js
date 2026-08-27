@@ -19,6 +19,22 @@
     }
   }
 
+  function loadNameUniqueScript() {
+    var script;
+    if ($("nameUniqueScript")) { return; }
+
+    if (document.readyState === "loading" && document.write) {
+      document.write('<script id="nameUniqueScript" src="js/name-unique.js?v=20260827b"><\/script>');
+      return;
+    }
+
+    script = document.createElement("script");
+    script.id = "nameUniqueScript";
+    script.type = "text/javascript";
+    script.src = "js/name-unique.js?v=20260827b";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  }
+
   function identityName(value) {
     return String(value === null || value === undefined ? "" : value)
       .replace(/^\s+|\s+$/g, "")
@@ -346,6 +362,9 @@
 
   // app.js/home.js/labels-ja.js がSharePointを読む前に本人記録の互換処理を入れる。
   installRecordIdentityCompatibility();
+
+  // 名前入力ダイアログの重複チェックを同期的に読み込む。
+  loadNameUniqueScript();
 
   // capture=trueで、IE系ブラウザの履歴戻り処理より先にBackspaceを無効化する。
   on(document, "keydown", preventBackspaceNavigation, true);
