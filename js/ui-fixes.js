@@ -4,6 +4,8 @@
 (function () {
   "use strict";
 
+  var connectionWatchStarted = false;
+
   function $(id) { return document.getElementById(id); }
 
   function hasClass(el, name) {
@@ -65,14 +67,41 @@
     return { name: name, clientId: clientId };
   }
 
+  function allSharePointChecksOk() {
+    var ids = ["diag-players-status", "diag-normalrecords-status", "diag-officialrecords-status", "diag-tournament-status", "diag-counter-status"];
+    var i;
+    var el;
+    var value;
+    for (i = 0; i < ids.length; i++) {
+      el = $(ids[i]);
+      if (!el) { return false; }
+      value = String(el.innerText || el.textContent || "").toUpperCase();
+      if (value !== "OK") { return false; }
+    }
+    return true;
+  }
+
   function markSharePointConnected() {
     var status = $("statusBar");
     var current;
-    if (!status) { return; }
+    if (!status || !allSharePointChecksOk()) { return false; }
     current = status.innerText || status.textContent || "";
-    if (current.indexOf("接続中") >= 0 || (current.indexOf("SharePoint") >= 0 && current.indexOf("接続") >= 0)) {
+    if (current.indexOf("接続確認中") >= 0 || current.indexOf("接続中") >= 0 || (current.indexOf("SharePoint") >= 0 && current.indexOf("接続") >= 0)) {
       status.innerText = "接続完了";
     }
+    return true;
+  }
+
+  function watchSharePointConnection() {
+    var attempts = 0;
+    function tick() {
+      if (markSharePointConnected()) { return; }
+      attempts++;
+      if (attempts < 120) { window.setTimeout(tick, 250); }
+    }
+    if (connectionWatchStarted) { return; }
+    connectionWatchStarted = true;
+    tick();
   }
 
   function betterPlayerRow(candidate, current) {
@@ -157,8 +186,6 @@
       originalLoad.call(SP, listName, columns, function (items) {
         var info = currentIdentityInfo();
         var fixed = items || [];
-
-        markSharePointConnected();
 
         if (hasColumn(columns, "EXP") && hasColumn(columns, "Plays") && hasColumn(columns, "BestScore")) {
           fixed = normalizeCurrentPlayerRows(fixed, info);
@@ -366,6 +393,7 @@
     bindRankingTabSync();
     createRankingDurationSwitch();
     syncRankingDurationButtons();
+    watchSharePointConnection();
 
     if ((!$("rankingDurationSwitch") || !$("normalTimeSelector")) && attempt < 50) {
       window.setTimeout(function () { setup(attempt + 1); }, 200);
